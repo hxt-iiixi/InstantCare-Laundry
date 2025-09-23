@@ -4,29 +4,17 @@ import cors from "cors";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-const authRoutes = require('./routes/authRoutes');
+import User from "./models/User.js";
+import auth from "./middleware/auth.js";
+import { sendOTPEmail } from "./utils/mailer.js";
+
 dotenv.config();
 
 const app = express();
-app.use(cors({
-  origin: "http://localhost:5173", // Ensure this matches your frontend's URL
-}));
+app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
-// ------------ User Model ------------
-// Move this definition to the top before using the User model
-const UserSchema = new mongoose.Schema(
-  {
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-  },
-  { timestamps: true }
-);
-
-const User = mongoose.model("User", UserSchema); // Ensure the model is defined before routes
-
-// ------------ Services & Orders Models (same as before) ------------
+// ------------------- Services & Orders Models -------------------
 
 const ServiceSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -53,15 +41,13 @@ const OrderSchema = new mongoose.Schema(
 );
 const Order = mongoose.model("Order", OrderSchema);
 
-// ------------ Routes ------------
+// ------------------- Routes -------------------
 
-app.get("/", (_req, res) => {
-  res.send("Welcome to the InstantCare Laundry API! Use /api/health to check status.");
-});
-
+// Health check
+app.get("/", (_req, res) => res.send("Welcome to InstantCare Laundry API!"));
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
-// Services
+// ------------------- Services -------------------
 app.get("/api/services", async (_req, res) => {
   const items = await Service.find().lean();
   res.json(items);
@@ -76,13 +62,13 @@ app.post("/api/services", async (req, res) => {
   }
 });
 
-// Orders
-app.get("/api/orders", async (_req, res) => {
+// ------------------- Orders (Protected) -------------------
+app.get("/api/orders", auth, async (_req, res) => {
   const items = await Order.find().populate("serviceId").lean();
   res.json(items);
 });
 
-app.post("/api/orders", async (req, res) => {
+app.post("/api/orders", auth, async (req, res) => {
   try {
     const o = await Order.create(req.body);
     res.status(201).json(o);
@@ -91,76 +77,125 @@ app.post("/api/orders", async (req, res) => {
   }
 });
 
-// ------------ User Routes ------------
+// ------------------- User Routes -------------------
 
-// Register a new user
+// Register
 app.post("/api/register", async (req, res) => {
   const { username, email, password } = req.body;
-
-  // Check if user already exists
   const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return res.status(400).json({ message: "Email is already in use" });
-  }
+  if (existingUser) return res.status(400).json({ message: "Email already in use" });
 
   try {
-    // Ensure salt rounds are defined as 12
-    const saltRounds = 12;
-
-    // Hash the password with bcrypt and 12 salt rounds
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // Create new user
+    const hashedPassword = await bcrypt.hash(password, 12);
     const newUser = new User({ username, email, password: hashedPassword });
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    res.status(201).json({
+      message: "User registered successfully",
+      token,
+      user: { username: newUser.username, email: newUser.email },
+    });
   } catch (error) {
-    console.error("Error during registration:", error); // Log errors for debugging
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// Login route
+// Login
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Find the user by email
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    // Check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    // Generate JWT token
-    const token = jwt.sign({ id: user._id }, "yourSecretKey", { expiresIn: "1h" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
     res.json({ token, user: { username: user.username, email: user.email } });
   } catch (error) {
-    console.error(error); // Log errors to the console for better debugging
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// ------------ Start ------------
+// Protected profile route
+app.get("/api/profile", auth, (req, res) => {
+  res.json({ user: req.user });
+});
 
+// ------------------- Forget Password Flow -------------------
+
+// 1. Request OTP
+app.post("/api/forget-password", async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) return res.status(400).json({ message: "Email not found" });
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  user.resetOTP = otp;
+  user.resetOTPExpiry = expiry;
+  await user.save();
+
+  try {
+    await sendOTPEmail(email, otp);
+    res.json({ message: "OTP sent to your email" });
+  } catch (err) {
+    console.error("Failed to send OTP email:", err);
+    res.status(500).json({ message: "Failed to send OTP email" });
+  }
+});
+
+// 2. Verify OTP
+app.post("/api/verify-otp", async (req, res) => {
+  const { email, otp } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) return res.status(400).json({ message: "Email not found" });
+
+  if (user.resetOTP !== otp) return res.status(400).json({ message: "Invalid OTP" });
+  if (new Date() > user.resetOTPExpiry) return res.status(400).json({ message: "OTP expired" });
+
+  res.json({ message: "OTP verified successfully" });
+});
+
+// 3. Reset Password
+app.post("/api/reset-password", async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) return res.status(400).json({ message: "Email not found" });
+
+  if (user.resetOTP !== otp) return res.status(400).json({ message: "Invalid OTP" });
+  if (new Date() > user.resetOTPExpiry) return res.status(400).json({ message: "OTP expired" });
+
+  try {
+    user.password = await bcrypt.hash(newPassword, 12);
+    user.resetOTP = undefined;
+    user.resetOTPExpiry = undefined;
+    await user.save();
+
+    res.json({ message: "Password reset successfully" });
+  } catch (err) {
+    console.error("Reset password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ------------------- Start Server -------------------
 const PORT = process.env.PORT || 4000;
 
 async function start() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MongoDB connected");
-    app.listen(PORT, () =>
-      console.log(`✅ API running on http://localhost:${PORT}`)
-    );
+    app.listen(PORT, () => console.log(`✅ API running on http://localhost:${PORT}`));
   } catch (err) {
-    console.error("❌ Mongo connect failed:", err.message);
+    console.error("❌ MongoDB connection failed:", err.message);
     process.exit(1);
   }
 }

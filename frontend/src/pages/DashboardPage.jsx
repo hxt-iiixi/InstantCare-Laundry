@@ -8,29 +8,37 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem("token"); // Get the JWT from localStorage
-        if (!token) {
-          navigate("/login"); // If no token, redirect to login
-          return;
-        }
+ useEffect(() => {
+  const fetchUserData = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login"); // redirect if not logged in
+      return;
+    }
 
-        const response = await axios.get("http://localhost:4000/api/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    try {
+      const response = await axios.get("http://localhost:4000/api/profile", {
+        headers: { Authorization: `Bearer ${token}` }, // JWT token in header
+      });
 
-        setUser(response.data); // Assuming the backend returns user data
-        setLoading(false);
-      } catch (err) {
-        setError("Failed to fetch user data");
-        setLoading(false);
-      }
-    };
+      console.log("User response:", response.data); // <-- ADD THIS LINE
+      setUser(response.data.user); // set user state
+      setLoading(false);
+    } catch (err) {
+      console.error(err); // <-- ADD THIS LINE
+      setError("Failed to fetch user data");
+      setLoading(false);
+    }
+  };
 
-    fetchUserData();
-  }, [navigate]);
+  fetchUserData();
+}, [navigate]);
+
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -38,13 +46,14 @@ const DashboardPage = () => {
   return (
     <div className="max-w-2xl mx-auto p-8 mt-20 bg-white rounded-lg shadow-xl">
       <h1 className="text-3xl font-semibold text-center mb-6">Dashboard</h1>
-      {user ? (
+      {user && (
         <div className="space-y-4">
           <h2 className="text-xl font-medium">Welcome, {user.username}!</h2>
           <p className="text-lg">Email: {user.email}</p>
+          <button onClick={handleLogout} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">
+            Logout
+          </button>
         </div>
-      ) : (
-        <p>No user data available.</p>
       )}
     </div>
   );

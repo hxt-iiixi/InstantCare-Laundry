@@ -1,10 +1,14 @@
-const express = require('express');
-const { getUser } = require('../controllers/authController');
-const auth = require('../middleware/auth'); // Assuming you have JWT authentication middleware
+// routes/authRoutes.js
+import express from 'express';
+import { register, login } from '../controllers/authController.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Protected route to get user data
-router.get('/user', auth, getUser); // auth middleware ensures token validation
+router.post('/register', register);
+router.post('/login', login);
+router.get('/profile', auth, (req, res) => {
+  res.status(200).json({ message: 'User profile', user: req.user });
+});
 
-module.exports = router;
+export default router;
