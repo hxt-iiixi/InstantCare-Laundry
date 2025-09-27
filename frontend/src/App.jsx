@@ -7,7 +7,7 @@ import Home from './pages/Home.jsx';
 import ForgetPasswordPage from "./pages/auth/ForgetPasswordPage.jsx";
 import VerifyOTPPage from "./pages/auth/VerifyOTPPage.jsx";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage.jsx";
-
+import CreatePasswordPage from "./pages/auth/CreatePasswordPage.jsx";
 import { motion } from 'framer-motion';
 
 export default function App() {
@@ -22,6 +22,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/create-password" element={<CreatePasswordPage />} />
       <Route path="/" element={<Home />} />
       <Route
         path="/register"

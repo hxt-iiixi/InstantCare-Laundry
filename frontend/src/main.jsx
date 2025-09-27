@@ -1,13 +1,17 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter as Router } from 'react-router-dom';
-import App from './App.jsx';
-import './index.css';
-
-createRoot(document.getElementById('root')).render(
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App.jsx";
+import ToastProvider from "./components/ToastProvider.jsx";
+import "./index.css";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <Router>
+    <BrowserRouter>
+      <ToastProvider />
+     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <App />
-    </Router>
+    </GoogleOAuthProvider>
+    </BrowserRouter>
   </StrictMode>
 );

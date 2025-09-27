@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { GoogleLogin } from "@react-oauth/google";
+import { toast } from "sonner";
+import { api } from "../../lib/api";
+
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -71,6 +75,42 @@ const LoginPage = () => {
         </button>
       </form>
 
+       {/* OR divider */}
+      <div className="flex items-center gap-3 my-5">
+        <div className="h-px flex-1 bg-gray-200" />
+        <span className="text-xs text-gray-500">OR</span>
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
+
+      {/* Google login (login-only) */}
+      <GoogleLogin
+        onSuccess={async (res) => {
+          try {
+            const credential = res?.credential;
+            const { data } = await api.post("/api/auth/google/login", { credential });
+            localStorage.setItem("token", data.token);
+            if (data?.user?.email) localStorage.setItem("prefillEmail", data.user.email);
+            toast.success("Welcome back!");
+            navigate("/dashboard", { replace: true });
+          } catch (e) {
+            const status = e?.response?.status;
+            const msg =
+              status === 404
+                ? "No account found for this Google email. Please register first."
+                : e?.response?.data?.message || "Google sign-in failed.";
+            toast.error(msg);
+            if (status === 404) navigate("/register", { replace: true });
+          }
+        }}
+        onError={() => toast.error("Google sign-in cancelled")}
+        ux_mode="popup"
+        text="continue_with"
+        shape="pill"
+        size="large"
+        width="100%"
+      />
+
+
       <p className="text-center mt-4">
         Don't have an account? <a href="/register" className="text-purple-500 hover:underline">Register here</a>
       </p>
@@ -79,9 +119,10 @@ const LoginPage = () => {
           Forgot Password?
         </a>
       </p>
-
+      
     </motion.div>
   );
+  
 };
 
 export default LoginPage;

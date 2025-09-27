@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 import User from "./models/User.js";
 import auth from "./middleware/auth.js";
 import { sendOTPEmail } from "./utils/mailer.js";
-
+import { OAuth2Client } from "google-auth-library";
 dotenv.config();
 
 const app = express();
@@ -41,6 +41,9 @@ const OrderSchema = new mongoose.Schema(
 );
 const Order = mongoose.model("Order", OrderSchema);
 
+function signToken(user) {
+  return jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" });
+}
 // ------------------- Routes -------------------
 
 // Health check
@@ -81,7 +84,9 @@ app.post("/api/orders", auth, async (req, res) => {
 
 // Register
 app.post("/api/register", async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email: rawEmail, password } = req.body;
+  const email = (rawEmail || "").toLowerCase().trim();
+
   const existingUser = await User.findOne({ email });
   if (existingUser) return res.status(400).json({ message: "Email already in use" });
 
@@ -103,25 +108,40 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
+
 // Login
 app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
+  const rawEmail = req.body.email || "";
+  const { password } = req.body;
 
   try {
+    const email = rawEmail.toLowerCase().trim();
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // If the account was created with Google, there's no password to compare
+    if (!user.password) {
+      return res.status(400).json({
+        message:
+          'This account is linked to Google. Use "Continue with Google" or set a password via "Forgot Password".',
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-    res.json({ token, user: { username: user.username, email: user.email } });
+    return res.json({ token, user: { username: user.username, email: user.email } });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
+
 
 // Protected profile route
 app.get("/api/profile", auth, (req, res) => {
@@ -199,5 +219,123 @@ async function start() {
     process.exit(1);
   }
 }
+// ========== Google OAuth setup ==========
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+function signToken(user) {
+  return jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
+}
+// Google OAuth: verify ID token, find-or-create user, return app JWT
+app.post("/api/auth/google", async (req, res) => {
+  try {
+    const { credential } = req.body; // Google ID token from the frontend
+    if (!credential) return res.status(400).json({ message: "Missing credential" });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload(); // { email, email_verified, name, picture, sub, ... }
+
+    if (!payload?.email || !payload?.email_verified) {
+      return res.status(401).json({ message: "Google account not verified." });
+    }
+
+    const email = String(payload.email).toLowerCase();
+    const googleId = payload.sub;
+    const name = payload.name || email.split("@")[0];
+    const avatar = payload.picture;
+
+    // Find or create user
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        email,
+        name,
+        username: name,     // keeps parity with your register payload
+        avatar,
+        googleId,
+        password: undefined // no password for Google users
+      });
+    } else if (!user.googleId) {
+      // Link Google to an existing email/password account
+      user.googleId = googleId;
+      user.name ??= name;
+      user.avatar ??= avatar;
+      await user.save();
+    }
+
+    const token = signToken(user);
+    return res.json({
+      token,
+      user: { username: user.username || user.name, email: user.email, name: user.name, avatar: user.avatar },
+      needsPassword: !user.password,
+    });
+  } catch (err) {
+    console.error("Google OAuth error:", err);
+    return res.status(401).json({ message: "Google sign-in failed." });
+  }
+});
+
+// Set / create a local password for the current (Google-authenticated) user
+app.post("/api/set-password", auth, async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters." });
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    res.json({ message: "Password set successfully." });
+  } catch (e) {
+    console.error("set-password error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// LOGIN-ONLY with Google (no auto-create)
+app.post("/api/auth/google/login", async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ message: "Missing credential" });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const email = payload?.email?.toLowerCase();
+    if (!email || !payload?.email_verified) {
+      return res.status(401).json({ message: "Google account not verified." });
+    }
+
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "No account with this Google email. Please register first." });
+    }
+
+    // link googleId if it wasn't saved yet
+    if (!user.googleId) {
+      user.googleId = payload.sub;
+      user.avatar ??= payload.picture;
+      user.name ??= payload.name || email.split("@")[0];
+      await user.save();
+    }
+
+    const token = signToken(user);
+    return res.json({
+      token,
+      user: { username: user.username || user.name, email: user.email, name: user.name, avatar: user.avatar },
+    });
+  } catch (err) {
+    console.error("Google login-only error:", err);
+    return res.status(401).json({ message: "Google sign-in failed." });
+  }
+});
 start();
