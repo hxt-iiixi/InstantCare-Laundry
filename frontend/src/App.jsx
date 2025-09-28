@@ -9,7 +9,7 @@ import VerifyOTPPage from "./pages/auth/VerifyOTPPage.jsx";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage.jsx";
 import CreatePasswordPage from "./pages/auth/CreatePasswordPage.jsx";
 import { motion } from 'framer-motion';
-
+import About from "./pages/About.jsx";
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
 
@@ -55,6 +55,7 @@ export default function App() {
       <Route path="/forget-password" element={<ForgetPasswordPage />} />
       <Route path="/verify-otp" element={<VerifyOTPPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/about" element={<About />} />
 
     </Routes>
   );

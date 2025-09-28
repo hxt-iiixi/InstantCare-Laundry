@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     googleId: { type: String, index: true, sparse: true },
     avatar: { type: String },
     name: { type: String },
-    // --- OTP reset fields (you already use these) ---
+    // --- OTP reset fields  ---
     resetOTP: String,
     resetOTPExpiry: Date,
   },

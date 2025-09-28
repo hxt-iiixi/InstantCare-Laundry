@@ -13,13 +13,13 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [toast, setToast] = useState(false); // New state for toast
+  const [showToast, setShowToast] = useState(false); // New state for toast
 
   // Show toast if redirected from register
   useEffect(() => {
       if (location.state?.fromRegister) {
-        setToast(true); // show toast
-        const timer = setTimeout(() => setToast(false), 3000);
+        setShowToast(true); // show toast
+        const timer = setTimeout(() => setShowToast(false), 3000);
         return () => clearTimeout(timer);
       }
     }, [location.state]);
@@ -45,7 +45,7 @@ const LoginPage = () => {
       <h1 className="text-2xl font-semibold text-center mb-6">Login</h1>
 
       {/* Toast Notification */}
-      {toast && (
+      {showToast && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded shadow-lg">
           Account created successfully!
         </div>
@@ -82,7 +82,8 @@ const LoginPage = () => {
         <div className="h-px flex-1 bg-gray-200" />
       </div>
 
-      {/* Google login (login-only) */}
+     {/* Google login (login-only) */}
+    <div style={{ width: "100%" }}>
       <GoogleLogin
         onSuccess={async (res) => {
           try {
@@ -107,8 +108,8 @@ const LoginPage = () => {
         text="continue_with"
         shape="pill"
         size="large"
-        width="100%"
       />
+    </div>
 
 
       <p className="text-center mt-4">

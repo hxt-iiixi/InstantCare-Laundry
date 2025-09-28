@@ -150,15 +150,14 @@ app.get("/api/profile", auth, (req, res) => {
 
 // ------------------- Forget Password Flow -------------------
 
-// 1. Request OTP
+// 1) Request OTP
 app.post("/api/forget-password", async (req, res) => {
-  const { email } = req.body;
+  const email = (req.body.email || "").toLowerCase().trim();   // 👈 normalize
   const user = await User.findOne({ email });
   if (!user) return res.status(400).json({ message: "Email not found" });
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
+  const expiry = new Date(Date.now() + 10 * 60 * 1000);
   user.resetOTP = otp;
   user.resetOTPExpiry = expiry;
   await user.save();
@@ -172,24 +171,26 @@ app.post("/api/forget-password", async (req, res) => {
   }
 });
 
-// 2. Verify OTP
+// 2) Verify OTP
 app.post("/api/verify-otp", async (req, res) => {
-  const { email, otp } = req.body;
+  const email = (req.body.email || "").toLowerCase().trim();   // 👈 normalize
+  const { otp } = req.body;
   const user = await User.findOne({ email });
   if (!user) return res.status(400).json({ message: "Email not found" });
-
   if (user.resetOTP !== otp) return res.status(400).json({ message: "Invalid OTP" });
   if (new Date() > user.resetOTPExpiry) return res.status(400).json({ message: "OTP expired" });
 
+  // Optional: mark as verified once and prevent reuse
+  // user.resetOTPVerified = true; await user.save();
   res.json({ message: "OTP verified successfully" });
 });
 
-// 3. Reset Password
+// 3) Reset Password
 app.post("/api/reset-password", async (req, res) => {
-  const { email, otp, newPassword } = req.body;
+  const email = (req.body.email || "").toLowerCase().trim();   // 👈 normalize
+  const { otp, newPassword } = req.body;
   const user = await User.findOne({ email });
   if (!user) return res.status(400).json({ message: "Email not found" });
-
   if (user.resetOTP !== otp) return res.status(400).json({ message: "Invalid OTP" });
   if (new Date() > user.resetOTPExpiry) return res.status(400).json({ message: "OTP expired" });
 
@@ -198,7 +199,6 @@ app.post("/api/reset-password", async (req, res) => {
     user.resetOTP = undefined;
     user.resetOTPExpiry = undefined;
     await user.save();
-
     res.json({ message: "Password reset successfully" });
   } catch (err) {
     console.error("Reset password error:", err);
@@ -222,11 +222,7 @@ async function start() {
 // ========== Google OAuth setup ==========
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-function signToken(user) {
-  return jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-}
+
 // Google OAuth: verify ID token, find-or-create user, return app JWT
 app.post("/api/auth/google", async (req, res) => {
   try {
