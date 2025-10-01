@@ -7,8 +7,18 @@ import circleA from "../assets/icons/circle1.svg";
 import circleB from "../assets/icons/circle2.svg";
 import circleC from "../assets/icons/circle3.svg";
 import circleD from "../assets/icons/circle1.svg";
-
+import jesus from "../assets/icons/jesus.png";   
+import praying from "../assets/icons/praying.svg";      
+import iconVision from "../assets/icons/bible.svg";         
 import ArcWheelV5 from "../components/ArcWheelV5";
+import iconCommunity from "../assets/icons/community.svg";
+import iconGrowth from "../assets/icons/growth.svg";
+import iconService from "../assets/icons/service.svg";
+import iconIntegrity from "../assets/icons/integrity.svg";
+import ampowerLogo from "../assets/icons/ampower.svg";
+import fbIcon from "../assets/icons/facebook-white.svg";
+import twIcon from "../assets/icons/twitter-white.svg";
+import igIcon from "../assets/icons/instagram-white.svg";
 
 export default function About() {
   // Track which absolute image index is currently in the LEFT (BIG) slot (0..3)
@@ -75,7 +85,7 @@ export default function About() {
         {/* Optional wash */}
         <div className="absolute inset-0" />
 
-       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 md:py-32 lg:py-40">
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 md:py-32 lg:py-40">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left copy (stacked cross-fade by leftIdx) */}
             <div className="order-1 lg:order-1 relative">
@@ -114,7 +124,7 @@ export default function About() {
                     thumbBottom={160}
                     durationMs={650}
                     easing="cubic-bezier(.22,.9,.22,1)"
-                    onLeftChange={setLeftIdx}   // updates which text fades in
+                    onLeftChange={setLeftIdx} // updates which text fades in
                   />
                 </div>
               </div>
@@ -123,242 +133,320 @@ export default function About() {
         </div>
       </section>
 
-      {/* SECTION 3: three columns */}
-      <section className="bg-[#D9D9D9]">
-       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 md:py-10 lg:py-25">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <div className="text-center">
-              <h3 className="text-2xl font-extrabold text-gray-900">Our Mission &amp; Vision</h3>
-              <p className="mt-3 text-gray-700 leading-relaxed">
-                To be a thriving spiritual home where lives are transformed, gifts are discovered, and the Kingdom of God
-                is tangibly experienced and shared with the world.
-              </p>
-            </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-extrabold text-gray-900">Our Mission Statement</h3>
-              <p className="mt-3 text-gray-700 leading-relaxed">
-                To connect people with God, with each other, and with our community through worship, discipleship, and
-                compassionate service, reflecting Christ&apos;s love in all we do.
-              </p>
-            </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-extrabold text-gray-900">Our Vision for the Future</h3>
-              <p className="mt-3 text-gray-700 leading-relaxed">
-                To be a thriving spiritual home where lives are transformed, gifts are discovered, and the Kingdom of God
-                is tangibly experienced and shared with the world.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ===================== SECTION 3 ===================== */}
+      <section className="bg-[#F8F4F2]">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+          <div className="space-y-12 md:space-y-16">
 
-      {/** =========================
-       *  SECTION 4: Core Values row
-       *  ========================= */}
-      <section className="bg-white">
-        + <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 md:py-32 lg:py-36">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                title: "Community",
-                text:
-                  "Fostering a loving and supportive family where everyone belongs.",
-                Icon: () => (
-                  <svg viewBox="0 0 24 24" className="w-7 h-7 fill-orange-500">
-                    <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5ZM2 20a8 8 0 0 1 16 0v1H2Z" />
-                    <path d="M19 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3ZM18 22h4v-1a5.9 5.9 0 0 0-3-5" />
-                  </svg>
-                )
-              },
-              {
-                title: "Growth",
-                text:
-                  "Encouraging spiritual and personal development through faith and learning.",
-                Icon: () => (
-                  <svg viewBox="0 0 24 24" className="w-7 h-7 stroke-orange-500" fill="none" strokeWidth="2">
-                    <path d="M3 21h18M7 21V10m5 11V6m5 15V14" />
-                    <path d="M7 10l3-3 3 3 4-4" />
-                  </svg>
-                )
-              },
-              {
-                title: "Service",
-                text:
-                  "Actively serving our neighbors and the world with compassion.",
-                Icon: () => (
-                  <svg viewBox="0 0 24 24" className="w-7 h-7 stroke-orange-500" fill="none" strokeWidth="2">
-                    <path d="M12 21s-7-4.35-7-10a7 7 0 0 1 14 0c0 5.65-7 10-7 10Z" />
-                    <path d="M9 10h6M9 13h6" />
-                  </svg>
-                )
-              },
-              {
-                title: "Integrity",
-                text:
-                  "Living out our faith with honesty, transparency, and moral conviction.",
-                Icon: () => (
-                  <svg viewBox="0 0 24 24" className="w-7 h-7 stroke-orange-500" fill="none" strokeWidth="2">
-                    <path d="M12 2l7 4v6c0 5-7 10-7 10S5 17 5 12V6l7-4Z" />
-                    <path d="M9 12l2 2 4-4" />
-                  </svg>
-                )
-              }
-            ].map(({ title, text, Icon }, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="shrink-0 rounded-full bg-orange-50 p-3 ring-1 ring-orange-100">
-                    <Icon />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{title}</h4>
-                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                      {text}
-                    </p>
-                  </div>
+            {/* Row 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-3 items-center">
+              {/* ICON */}
+              <div className="md:col-span-5 flex justify-center md:justify-start">
+                <div className="w-56 h-56 md:w-80 md:h-80 rounded-2xl bg-[#F8F4F2] flex items-center justify-center overflow-hidden">
+                  <img src={jesus} alt="Mission & Vision icon" className="h-[95%] w-[95%] object-contain" />
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/** ==================================
-       *  SECTION 5: Meet Our Leadership Team
-       *  ================================== */}
-      <section className="bg-gray-50">
-        + <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-24 md:py-32 lg:py-36">
-          <div className="text-center">
-            <h2 className="text-2xl md:text-[28px] font-extrabold text-gray-900">
-              Meet Our Leadership <span className="block">Team</span>
-            </h2>
-            <p className="text-gray-600 mt-3">
-              Dedicated servants guiding our church with wisdom and care.
-            </p>
-          </div>
+              {/* COPY */}
+              <div className="md:col-span-7 text-center md:text-left md:-ml-2">
+                <h3 className="text-[30px] md:text-[36px] font-extrabold tracking-tight text-gray-900">
+                  Our Mission &amp; Vision
+                </h3>
+                <p className="mt-3 text-[16px] md:text-[18px] text-gray-700 leading-7 md:leading-8 max-w-[54ch] mx-auto md:mx-0">
+                  To be a thriving spiritual home where lives are transformed by God’s grace, gifts are discovered and nurtured,
+                  and the Kingdom of God is experienced in worship, fellowship, and service, then shared with the world in love and purpose.
+                </p>
+              </div>
+            </div>
 
-          <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 justify-items-center">
-            {[
-              {
-                name: "Pastor David Lee",
-                roleLine1: "Lead",
-                roleLine2: "Pastor",
-                img: "https://i.pravatar.cc/160?img=12"
-              },
-              {
-                name: "Sarah Chen",
-                roleLine1: "Youth",
-                roleLine2: "Director",
-                img: "https://i.pravatar.cc/160?img=32"
-              },
-              {
-                name: "Emily White",
-                roleLine1: "Community",
-                roleLine2: "Outreach Lead",
-                img: "https://i.pravatar.cc/160?img=47"
-              },
-              {
-                name: "Mark Johnson",
-                roleLine1: "Worship",
-                roleLine2: "Leader",
-                img: "https://i.pravatar.cc/160?img=66"
-              }
-            ].map((p, i) => (
-              <div key={i} className="text-center">
-                <div className="mx-auto h-16 w-16 sm:h-20 sm:w-20 rounded-full overflow-hidden ring-2 ring-white shadow">
-                  <img src={p.img} alt={p.name} className="h-full w-full object-cover" />
-                </div>
-                <div className="mt-3">
-                  <div className="text-sm font-semibold text-gray-900 leading-tight">
-                    {p.name.split(" ").slice(0, 2).join(" ")} <br />
-                    {p.name.split(" ").slice(2).join(" ")}
-                  </div>
-                  <div className="text-[11px] text-gray-500 leading-tight mt-1">
-                    {p.roleLine1} <br /> {p.roleLine2}
-                  </div>
+            {/* Row 2 */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-3 items-center">
+              {/* COPY */}
+              <div className="md:col-span-7 order-2 md:order-1 text-center md:text-left md:-mr-2">
+                <h3 className="text-[30px] md:text-[36px] font-extrabold tracking-tight text-gray-900">
+                  Our Mission Statement
+                </h3>
+                <p className="mt-3 text-[16px] md:text-[18px] text-gray-700 leading-7 md:leading-8 max-w-[54ch] mx-auto md:mx-0">
+                  To connect people with God, with each other, and with our community through worship, discipleship,
+                  and compassionate service, reflecting Christ&apos;s love in all we do.
+                </p>
+              </div>
+
+              {/* ICON */}
+              <div className="md:col-span-5 order-1 md:order-2 flex justify-center md:justify-end">
+                <div className="w-56 h-56 md:w-80 md:h-80 rounded-2xl bg-[#F8F4F2] flex items-center justify-center overflow-hidden">
+                  <img src={praying} alt="Mission Statement icon" className="h-[95%] w-[95%] object-contain" />
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Row 3 */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-3 items-center">
+              {/* ICON */}
+              <div className="md:col-span-5 flex justify-center md:justify-start">
+                <div className="w-56 h-56 md:w-80 md:h-80 rounded-2xl bg-[#F8F4F2] flex items-center justify-center overflow-hidden">
+                  <img src={iconVision} alt="Vision icon" className="h-[95%] w-[95%] object-contain" />
+                </div>
+              </div>
+
+              {/* COPY */}
+              <div className="md:col-span-7 text-center md:text-left md:-ml-2">
+                <h3 className="text-[30px] md:text-[36px] font-extrabold tracking-tight text-gray-900">
+                  Our Vision for the Future
+                </h3>
+                <p className="mt-3 text-[16px] md:text-[18px] text-gray-700 leading-7 md:leading-8 max-w-[54ch] mx-auto md:mx-0">
+                  To be a thriving spiritual home where lives are transformed, gifts are discovered, and the Kingdom of God
+                  is tangibly experienced and shared with the world.
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      {/** ==============================
-       *  SECTION 6: Hear From Our Community
-       *  ============================== */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-14">
-          <div className="text-center">
-            <h2 className="text-2xl md:text-[26px] font-extrabold text-gray-900">
-              Hear From Our <span className="block">Community</span>
-            </h2>
-            <p className="text-gray-600 mt-2">
-              What our members are saying about <br className="hidden sm:block" />
-              Church Connect.
-            </p>
-          </div>
 
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {[
-              {
-                text:
-                  "Church Connect has truly been a blessing in my life. The community here is so welcoming, and the sermons are incredibly uplifting. I've found a place where I truly feel at home.",
-                author: "Jessica Miller",
-                note: "Long-time Member"
-              },
-              {
-                text:
-                  "Church Connect has truly been a blessing in my life. The community here is so welcoming, and the sermons are incredibly uplifting. I've found a place where I truly feel at home.",
-                author: "Jessica Miller",
-                note: "Long-time Member"
-              },
-              {
-                text:
-                  "From the moment I walked in, I felt a genuine sense of belonging. The youth programs are fantastic, and my kids absolutely love attending. It's more than just a church; it's a family.",
-                author: "Michael Brown",
-                note: "Parent & Volunteer"
-              },
-              {
-                text:
-                  "Church Connect has truly been a blessing in my life. The community here is so welcoming, and the sermons are incredibly uplifting. I've found a place where I truly feel at home.",
-                author: "Jessica Miller",
-                note: "Long-time Member"
-              },
-              {
-                text:
-                  "Church Connect has truly been a blessing in my life. The community here is so welcoming, and the sermons are incredibly uplifting. I've found a place where I truly feel at home.",
-                author: "Jessica Miller",
-                note: "Long-time Member"
-              }
-            ].map((t, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm"
-              >
-                <div className="flex gap-2">
-                  {/* quote mark */}
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="w-5 h-5 text-orange-500 shrink-0"
-                    fill="currentColor"
+      {/* ===================== SECTION 4 ===================== */}
+      <section className="bg-white">
+        {/* light beige cap */}
+        <div className="h-10 w-full bg-[#F3EEEA]" />
+
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 -mt-8 pb-16 md:pb-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+
+            {/* Community */}
+            <div className="rounded-xl bg-white ring-1 ring-gray-100 shadow-sm p-6 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center">
+                <img src={iconCommunity} alt="Community icon" className="h-8 w-8 text-orange-500" />
+              </div>
+              <h4 className="font-semibold text-gray-900">Community</h4>
+              <p className="mt-1 text-[13px] leading-5 text-gray-600 max-w-[26ch] mx-auto">
+                Fostering a loving and supportive family where everyone belongs.
+              </p>
+            </div>
+
+            {/* Growth */}
+            <div className="rounded-xl bg-white ring-1 ring-gray-100 shadow-sm p-6 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center">
+                <img src={iconGrowth} alt="Growth icon" className="h-8 w-8 text-orange-500" />
+              </div>
+              <h4 className="font-semibold text-gray-900">Growth</h4>
+              <p className="mt-1 text-[13px] leading-5 text-gray-600 max-w-[26ch] mx-auto">
+                Encouraging spiritual and personal development through faith and learning.
+              </p>
+            </div>
+
+            {/* Service */}
+            <div className="rounded-xl bg-white ring-1 ring-gray-100 shadow-sm p-6 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center">
+                <img src={iconService} alt="Service icon" className="h-8 w-8 text-orange-500" />
+              </div>
+              <h4 className="font-semibold text-gray-900">Service</h4>
+              <p className="mt-1 text-[13px] leading-5 text-gray-600 max-w-[26ch] mx-auto">
+                Actively serving our neighbors and the world with compassion.
+              </p>
+            </div>
+
+            {/* Integrity */}
+            <div className="rounded-xl bg-white ring-1 ring-gray-100 shadow-sm p-6 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center">
+                <img src={iconIntegrity} alt="Integrity icon" className="h-8 w-8 text-orange-500" />
+              </div>
+              <h4 className="font-semibold text-gray-900">Integrity</h4>
+              <p className="mt-1 text-[13px] leading-5 text-gray-600 max-w-[26ch] mx-auto">
+                Living out our faith with honesty, transparency, and moral conviction.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+      {/* ===================== SECTION 5 ===================== */}
+      <section className="relative bg-[#F8F4F2]">
+        {/* angled beige cap */}
+        <div
+          className="absolute -top-10 left-0 right-0 h-20 bg-[#F3EEEA] [clip-path:polygon(0_0,100%_0,100%_70%,0_100%)]"
+          aria-hidden
+        />
+
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 items-start">
+            {/* LEFT: heading + subhead */}
+            <div className="md:col-span-3">
+              <h2 className="text-[28px] md:text-[34px] font-extrabold leading-tight text-gray-900">
+                Meet Our
+                <span className="block">Leadership Team</span>
+              </h2>
+              <p className="mt-3 text-[15px] text-gray-600 max-w-[36ch]">
+                Dedicated servants guiding our church
+                with wisdom and care.
+              </p>
+            </div>
+
+            {/* RIGHT: five slim cards in one line */}
+            <div className="md:col-span-9">
+              <div className="flex flex-nowrap justify-between gap-4 sm:gap-5 overflow-x-auto md:overflow-visible">
+                {[
+                  {
+                    img: "https://i.pravatar.cc/160?img=12",
+                    name1: "Pastor",
+                    name2: "David Lee",
+                    role1: "Lead",
+                    role2: "Pastor",
+                  },
+                  {
+                    img: "https://i.pravatar.cc/160?img=32",
+                    name1: "Sarah",
+                    name2: "Chen",
+                    role1: "Youth",
+                    role2: "Director",
+                  },
+                  {
+                    img: "https://i.pravatar.cc/160?img=47",
+                    name1: "Emily",
+                    name2: "White",
+                    role1: "Community",
+                    role2: "Outreach Lead",
+                  },
+                  {
+                    img: "https://i.pravatar.cc/160?img=66",
+                    name1: "Mark",
+                    name2: "Johnson",
+                    role1: "Worship",
+                    role2: "Leader",
+                  },
+                  {
+                    img: "https://i.pravatar.cc/160?img=32",
+                    name1: "Sarah",
+                    name2: "Chen",
+                    role1: "Youth",
+                    role2: "Director",
+                  },
+                ].map((p, i) => (
+                  <div
+                    key={i}
+                    className="relative w-[148px] sm:w-[150px] shrink-0 rounded-xl bg-white ring-1 ring-gray-100 shadow-sm pt-9 pb-4 text-center"
                   >
-                    <path d="M7 6h4v4H9v4H5V9a3 3 0 0 1 2-3Zm8 0h4v4h-2v4h-4V9a3 3 0 0 1 2-3Z" />
-                  </svg>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {t.text}
-                  </p>
-                </div>
-                <div className="mt-5">
-                  <div className="text-sm font-semibold text-gray-900">{t.author}</div>
-                  <div className="text-[11px] text-gray-500">{t.note}</div>
-                </div>
+                    {/* avatar overlap */}
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2">
+                      <div className="h-14 w-14 rounded-full overflow-hidden ring-2 ring-white shadow">
+                        <img src={p.img} alt={`${p.name1} ${p.name2}`} className="h-full w-full object-cover" />
+                      </div>
+                    </div>
+
+                    {/* name (two lines, bold, tight) */}
+                    <div className="mt-2 px-3">
+                      <div className="text-[15px] font-semibold text-gray-900 leading-tight">
+                        {p.name1}
+                        <br />
+                        {p.name2}
+                      </div>
+
+                      {/* role (two lines, small gray) */}
+                      <div className="mt-2 text-[11px] text-gray-500 leading-tight">
+                        {p.role1}
+                        <br />
+                        {p.role2}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>
+
+     {/* ===================== FOOTER ===================== */}
+    <footer className="relative bg-[#171615] text-gray-200">
+      {/* angled top cap */}
+      <div
+        aria-hidden
+        className="absolute -top-8 left-0 right-0 h-16 bg-[#171615] [clip-path:polygon(0_26%,96%_0,100%_100%,0_100%)]"
+      />
+
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-10 md:pt-14">
+        {/* row: logo + headline (LEFT-ALIGNED) */}
+        <div className="flex items-start gap-4">
+          <img src={ampowerLogo} alt="AmPower" className="h-7 w-auto md:h-8 shrink-0" />
+          <h3 className="font-serif font-extrabold text-white leading-tight text-[22px] md:text-[30px]">
+            <span className="whitespace-nowrap">Building stronger Churches</span>
+            <br />
+            <span className="whitespace-nowrap">for the next Generation.</span>
+          </h3>
+        </div>
+
+        {/* row: 2 content cols + follow col, with precise dividers */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 items-start">
+          {/* col 1 */}
+          <div className="md:col-span-4">
+            <p className="text-sm text-gray-300 max-w-prose">
+              We believe in the power of connection and shared faith. Come and be a part of our growing church family.
+            </p>
+            <div className="mt-5">
+              <p className="text-sm text-white font-semibold">Features:</p>
+              <p className="mt-1 text-sm text-gray-300 max-w-prose">
+                We believe in the power of connection and shared faith. Come and be a part of our growing church family.
+              </p>
+            </div>
+          </div>
+
+          {/* divider */}
+          <div className="hidden md:block md:col-span-1">
+            <div className="h-full border-l border-white/15" />
+          </div>
+
+          {/* col 2 */}
+          <div className="md:col-span-4">
+            <p className="text-sm text-gray-300 max-w-prose">
+              We believe in the power of connection and shared faith. Come and be a part of our growing church family.
+            </p>
+            <div className="mt-5">
+              <p className="text-sm text-white font-semibold">Support:</p>
+              <p className="mt-1 text-sm text-gray-300 max-w-prose">
+                We believe in the power of connection and shared faith. Come and be a part of our growing church family.
+              </p>
+            </div>
+          </div>
+
+          {/* divider */}
+          <div className="hidden md:block md:col-span-1">
+            <div className="h-full border-l border-white/15" />
+          </div>
+
+          {/* col 3: follow */}
+          <div className="md:col-span-2">
+            <p className="text-sm text-white font-semibold">Follow Us</p>
+            <div className="mt-2 flex items-center gap-4">
+              <a href="#" aria-label="Facebook" className="opacity-90 hover:opacity-100 transition">
+                <img src={fbIcon} alt="" className="h-4 w-4" />
+              </a>
+              <a href="#" aria-label="Twitter" className="opacity-90 hover:opacity-100 transition">
+                <img src={twIcon} alt="" className="h-4 w-4" />
+              </a>
+              <a href="#" aria-label="Instagram" className="opacity-90 hover:opacity-100 transition">
+                <img src={igIcon} alt="" className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* bottom rule */}
+        <div className="mt-8 border-t border-white/10" />
+
+        {/* copyright row (centered) */}
+        <div className="py-6">
+          <p className="text-center text-[13px] text-gray-300">
+            © 2025 <span className="text-white">AmPower</span> •{" "}
+            <a href="#" className="hover:text-white">Home</a> •{" "}
+            <a href="#" className="hover:text-white">About</a> •{" "}
+            <a href="#" className="hover:text-white">Events</a> •{" "}
+            <a href="#" className="hover:text-white">Contact</a>
+          </p>
+        </div>
+      </div>
+    </footer>
+
     </>
   );
 }
