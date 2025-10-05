@@ -1,40 +1,73 @@
-import bg from "../assets/images/chruchBG.jpg"; 
+import React from "react";
+import { Link } from "react-router-dom";
 
 export default function Hero() {
   return (
-    <section className="relative">
-      {/* Background */}
-      <div
-        className="absolute inset-0 bg-center bg-cover"
-        style={{ backgroundImage: `url(${bg})` }} 
-        aria-hidden="true"
-      />
-      <div className="absolute inset-0" aria-hidden="true" />
+    <section className="relative overflow-x-visible overflow-y-visible bg-[#FBF7F3] pb-56 lg:pb-64">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 lg:pt-14">
+        <div className="relative grid items-center gap-10 lg:grid-cols-12">
+        
+          <div className="relative lg:col-span-7">
+         
+            <img
+              src="/src/assets/icons/cross.png"
+              alt=""
+              aria-hidden="true"
+              className="
+                pointer-events-none select-none absolute z-30
+                top-0
+                left-[-200px] sm:left-[-240px] lg:left-[-300px]
+                h-64 sm:h-72 lg:h-80 w-auto
+              "
+            />
 
-      {/* Content */}
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="pt-10 md:pt-12" />
-        <div className="flex min-h-[56vh] md:min-h-[64vh] lg:min-h-[72vh] items-center justify-center">
-          <div className="text-center max-w-5xl">
-            <h1 className="font-serif font-extrabold leading-tight text-gray-900 text-4xl sm:text-5xl lg:text-[72px]">
-              Welcome to AmPower!
+            <h1 className="text-4xl leading-[1.05] sm:text-5xl lg:text-[56px] font-black tracking-tight text-black">
+              Empowering Faith,
+              <br />
+              Building Community,
+              <br />
+              Lead with Clarity.
             </h1>
-            <p className="mt-4 text-base sm:text-lg lg:text-xl text-gray-700 max-w-4xl mx-auto">
-              A place where faith grows, community flourishes, and lives are touched by God’s love.
-              Join us in worship, service, and fellowship as we walk together and shine His light.
+
+            <p className="mt-5 max-w-2xl text-[17px] leading-relaxed text-zinc-700">
+              A place where faith grows, community flourishes, and lives are
+              touched by God’s love. Join us in worship, service, and
+              fellowship as we walk together and shine His light.
             </p>
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <a href="#join" className="inline-flex items-center justify-center rounded-md bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-3 shadow transition-colors">
-                Join Us
-              </a>
-              <a href="#features" className="inline-flex items-center justify-center rounded-md bg-neutral-900 hover:bg-neutral-800 text-white font-medium px-6 py-3 shadow transition-colors">
-                Explore Features
-              </a>
+
+            <div className="mt-8">
+              <Link
+                to="/join"
+                className="inline-flex items-center rounded-xl bg-[#FF7A2F] px-6 py-3 text-base font-semibold text-white shadow-sm hover:opacity-90"
+              >
+                Join Now
+              </Link>
             </div>
           </div>
+
+          {/* RIGHT ILLUSTRATION */}
+          <div className="relative lg:col-span-5">
+            <img
+              src="/src/assets/icons/family-church.svg"
+              alt="Family walking from church"
+              className="ml-auto h-auto w-full max-w-[520px] relative z-10"
+            />
+          </div>
         </div>
-        <div className="pb-10 md:pb-12" />
       </div>
+
+      {/* ARROW — kept low & slightly left per last tweak */}
+      <img
+        src="/src/assets/icons/arrow.png"
+        alt=""
+        aria-hidden="true"
+        className="
+          pointer-events-none select-none absolute z-20
+          w-[520px] max-w-[78vw] h-auto
+          left-[30%] sm:left-[31%] lg:left-[33%]
+          bottom-0 sm:bottom-2 lg:bottom-4
+        "
+      />
     </section>
   );
 }

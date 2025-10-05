@@ -1,37 +1,57 @@
-import { NavLink } from "react-router-dom";
-import logo from "../assets/icons/ampower.svg"; // ✅ import from src
-
-const linkBase = "px-4 py-2 text-sm md:text-base text-gray-300 hover:text-white transition-colors";
-const linkActive = "text-white border-b-2 border-white";
+import React from "react";
+import { Link, NavLink } from "react-router-dom";
+import logo from "../assets/icons/ampower.svg";
 
 export default function Navbar() {
   return (
-    <header className="bg-black text-white">
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="h-14 md:h-16 grid grid-cols-3 items-center">
-          <div className="flex items-center">
-            <img src={logo} alt="AmPower!" className="h-7 md:h-8 w-auto" />
-          </div>
+    <header className="w-full bg-[#FBF7F3]">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-3 items-center py-5">
+          {/* Left: Logo (bigger) */}
+          <Link to="/" className="flex items-center gap-2">
+            <img
+              src={logo}
+              alt="AmPower!"
+              className="h-10 md:h-15 lg:h-20 w-auto"  
+            />
+          </Link>
 
-          <div className="hidden md:flex items-center justify-center gap-1">
+          {/* Center: Nav */}
+          <nav className="flex items-center justify-center gap-8 text-[17px]">
             {[
-              ["Home", "/Home"], ["About", "/about"], ["Events", "/events"],
-              ["Contact", "/contact"], ["Calendar", "/calendar"],
-            ].map(([label, to]) => (
+              { to: "/", label: "Home" },
+              { to: "/about", label: "About" },
+              { to: "/contact", label: "Contact" },
+            ].map((item) => (
               <NavLink
-                key={label}
-                to={to}
-                end={to === "/"}
-                className={({ isActive }) => `${linkBase} ${isActive ? linkActive : ""}`}
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `transition-colors ${isActive ? "font-semibold text-black" : "text-zinc-600 hover:text-black"}`
+                }
               >
-                {label}
+                {item.label}
               </NavLink>
             ))}
-          </div>
+          </nav>
 
-          <div />
+          {/* Right: CTAs */}
+          <div className="flex items-center justify-end gap-3">
+            <Link
+              to="/login"
+              className="inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black shadow-sm hover:shadow"
+            >
+              Log In
+            </Link>
+            <Link
+              to="/register"
+              className="inline-flex items-center rounded-xl bg-[#FF7A2F] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+            >
+              Join Now
+            </Link>
+          </div>
         </div>
-      </nav>
+      </div>
     </header>
   );
 }

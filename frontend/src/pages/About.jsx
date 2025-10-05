@@ -15,7 +15,7 @@ import iconCommunity from "../assets/icons/community.svg";
 import iconGrowth from "../assets/icons/growth.svg";
 import iconService from "../assets/icons/service.svg";
 import iconIntegrity from "../assets/icons/integrity.svg";
-import ampowerLogo from "../assets/icons/ampower.svg";
+import ampowerLogo from "../assets/icons/ampower-ehite.png";
 import fbIcon from "../assets/icons/facebook-white.svg";
 import twIcon from "../assets/icons/twitter-white.svg";
 import igIcon from "../assets/icons/instagram-white.svg";
