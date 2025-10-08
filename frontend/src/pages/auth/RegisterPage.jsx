@@ -27,25 +27,42 @@ const RegisterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-    try {
-      const response = await axios.post("http://localhost:4000/api/register", {
-        username,
-        email,
-        password,
-      });
-      localStorage.setItem("token", response.data.token);
-      navigate("/login", { replace: true, state: { fromRegister: true } });
-    } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong!");
-    }
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  console.log("Submitting form..."); // Check if the form is being submitted
+  if (password !== confirmPassword) {
+    setError("Passwords do not match");
+    return;
+  }
+  try {
+    const response = await axios.post("http://localhost:4000/api/register", {
+      username,
+      email,
+      password,
+    });
+    console.log(response.data); // Check the response from the backend
+    localStorage.setItem("token", response.data.token);
+    navigate("/verify-otp", { state: { email } });  // Ensure navigation happens here
+  } catch (err) {
+    setError(err.response?.data?.message || "Something went wrong!");
+  }
+};
 
+const handleVerify = async () => {
+  if (!otp.trim() || otp.length < 4) return toast.error("Enter the OTP code.");
+  setLoading(true);
+  try {
+    // Use the registration OTP verification route here
+    await api.post("/api/verify-otp-registration", { email: emailState, otp });
+    toast.success("OTP verified successfully.");
+    navigate("/dashboard", { replace: true }); // Navigate to dashboard after successful verification
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "OTP verification failed.");
+  } finally {
+    setLoading(false);
+  }
+};
+  
   return (
     <>
       <Navbar />
@@ -214,17 +231,10 @@ const RegisterPage = () => {
                   </button>
                 </form>
 
-                {/* OR divider */}
-                <div className="flex items-center gap-3 my-5">
-                  <div className="h-px flex-1 bg-gray-200" />
-                  <span className="text-xs text-gray-500">OR</span>
-                  <div className="h-px flex-1 bg-gray-200" />
-                </div>
+            
 
                 {/* Google OAuth button (unchanged behavior) */}
-                <GoogleButton
-                  onSuccess={() => navigate("/dashboard", { replace: true })}
-                />
+                
 
                 <p className="text-center mt-4 text-sm">
                   Already have an account?{" "}

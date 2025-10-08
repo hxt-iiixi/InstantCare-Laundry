@@ -1,5 +1,5 @@
 import Navbar from "../components/Navbar";
-import Hero from "../components/Hero";
+import Hero from "../components/Home-Page/Hero";
 import FeatureCards from "../components/Home-Page/FeatureCards";
 import DevotionBanner from "../components/Home-Page/DevotionBanner";
 import UpcomingEvents from "../components/Home-Page/UpcomingEvents";

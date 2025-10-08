@@ -82,31 +82,32 @@ app.post("/api/orders", auth, async (req, res) => {
 
 // ------------------- User Routes -------------------
 
-// Register
 app.post("/api/register", async (req, res) => {
   const { username, email: rawEmail, password } = req.body;
   const email = (rawEmail || "").toLowerCase().trim();
 
+  // Check if user already exists
   const existingUser = await User.findOne({ email });
   if (existingUser) return res.status(400).json({ message: "Email already in use" });
 
+  // Generate OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiry = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
+
+  // Temporarily store OTP (in a separate collection or temp field)
+  const otpUser = new User({ email, otp, otpExpiry: expiry });
+  await otpUser.save(); // Store in a temporary "OTP" user record
+
+  // Send OTP to user's email
   try {
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const newUser = new User({ username, email, password: hashedPassword });
-    await newUser.save();
-
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-    res.status(201).json({
-      message: "User registered successfully",
-      token,
-      user: { username: newUser.username, email: newUser.email },
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    await sendOTPEmail(email, otp);  // Send OTP via email
+    res.status(200).json({ message: "OTP sent to your email. Please verify it." });
+  } catch (err) {
+    console.error("Failed to send OTP email:", err);
+    res.status(500).json({ message: "Failed to send OTP email" });
   }
 });
+
 
 
 // Login
@@ -173,16 +174,15 @@ app.post("/api/forget-password", async (req, res) => {
 
 // 2) Verify OTP
 app.post("/api/verify-otp", async (req, res) => {
-  const email = (req.body.email || "").toLowerCase().trim();   // 👈 normalize
-  const { otp } = req.body;
+    const { email, otp } = req.body;
   const user = await User.findOne({ email });
-  if (!user) return res.status(400).json({ message: "Email not found" });
-  if (user.resetOTP !== otp) return res.status(400).json({ message: "Invalid OTP" });
-  if (new Date() > user.resetOTPExpiry) return res.status(400).json({ message: "OTP expired" });
 
-  // Optional: mark as verified once and prevent reuse
-  // user.resetOTPVerified = true; await user.save();
-  res.json({ message: "OTP verified successfully" });
+  if (!user) return res.status(400).json({ message: "Email not found." });
+  if (user.resetOTP !== otp) return res.status(400).json({ message: "Invalid OTP." });
+  if (new Date() > user.resetOTPExpiry) return res.status(400).json({ message: "OTP expired." });
+
+  // Proceed with resetting password
+  res.json({ message: "OTP verified for password reset." });
 });
 
 // 3) Reset Password
@@ -205,6 +205,36 @@ app.post("/api/reset-password", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+// Backend: OTP verification for registration (create user after OTP verification)
+app.post("/api/verify-otp-registration", async (req, res) => {
+  const { email, otp } = req.body;
+  const otpUser = await User.findOne({ email });
+
+  if (!otpUser) return res.status(400).json({ message: "No user found with this email." });
+  if (otpUser.otp !== otp) return res.status(400).json({ message: "Invalid OTP." });
+  if (new Date() > otpUser.otpExpiry) return res.status(400).json({ message: "OTP expired." });
+
+  // OTP is valid, now create the user
+  try {
+    const hashedPassword = await bcrypt.hash(req.body.password, 12);  // Create user with password
+    const newUser = new User({
+      username: req.body.username,
+      email,
+      password: hashedPassword
+    });
+
+    await newUser.save();
+    res.status(201).json({ message: "User successfully registered!" });
+
+    // Optionally, delete the temporary OTP user record
+    await otpUser.remove();
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ message: "Error creating user" });
+  }
+});
+
+
 
 // ------------------- Start Server -------------------
 const PORT = process.env.PORT || 4000;

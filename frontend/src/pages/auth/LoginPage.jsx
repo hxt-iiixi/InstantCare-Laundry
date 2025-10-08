@@ -7,17 +7,17 @@ import { GoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import { api } from "../../lib/api";
 
-// Decorative assets (rename paths as you prefer)
+
 import leftDecor from "/src/assets/icons/cross.png";
 import rightDecor from "/src/assets/icons/family-church.svg";
 import heroIllustration from "/src/assets/images/login-illustration.png";
 
-// Small field icons (optional)
+
 import iconMail from "/src/assets/icons/Mail.png";
 import iconLock from "/src/assets/icons/Lock.png";
 
 
-// Next sections (already built)
+
 import LeadershipTeam from "../../components/Home-Page/LeadershipTeam.jsx";
 import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter.jsx";
 import Navbar from "../../components/Navbar";
@@ -55,12 +55,12 @@ const LoginPage = () => {
   return (
     <>
       <Navbar />
-      {/* ===== Login Section (1:1 UI style with Sign Up) ===== */}
+      {/* ===== Login Section ===== */}
       <section className="relative bg-[#F7F3EF] overflow-hidden">
         {/* spacing if navbar is fixed */}
         <div className="h-16 sm:h-20" aria-hidden />
 
-        {/* LEFT decor (bigger cross) */}
+    
         <img
           src={leftDecor}
           alt=""
@@ -68,7 +68,7 @@ const LoginPage = () => {
           draggable="false"
         />
 
-        {/* RIGHT decor (family) */}
+   
         <img
           src={rightDecor}
           alt=""
@@ -186,7 +186,7 @@ const LoginPage = () => {
                   <div className="h-px flex-1 bg-gray-200" />
                 </div>
 
-                {/* Google login (unchanged behavior) */}
+                {/* Google login */}
                 <div className="w-full">
                   <GoogleLogin
                     onSuccess={async (res) => {
@@ -196,7 +196,7 @@ const LoginPage = () => {
                         localStorage.setItem("token", data.token);
                         if (data?.user?.email) localStorage.setItem("prefillEmail", data.user.email);
                         toast.success("Welcome back!");
-                        navigate("/dashboard", { replace: true });
+                        navigate("/dashboard");
                       } catch (e) {
                         const status = e?.response?.status;
                         const msg =
