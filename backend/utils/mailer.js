@@ -17,7 +17,7 @@ export const sendOTPEmail = async (to, otp) => {
   await transporter.sendMail({
     from: process.env.SMTP_USER,
     to,
-    subject: "Your InstantCare Laundry OTP",
+    subject: "Your AMPOWER OTP",
     text: `Your OTP code is: ${otp}. It will expire in 10 minutes.`,
   });
 };

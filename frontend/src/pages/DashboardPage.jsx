@@ -1,39 +1,40 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import SideNav from "../components/Super-admin/SideNav"; // Import SideNav component
+import TopNav from "../components/Super-admin/TopNav"; // Import TopNav component
+import RightImg from "../assets/images/jc.jpg";
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login"); // redirect if not logged in
+        return;
+      }
 
- useEffect(() => {
-  const fetchUserData = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login"); // redirect if not logged in
-      return;
-    }
+      try {
+        const response = await axios.get("http://localhost:4000/api/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-    try {
-      const response = await axios.get("http://localhost:4000/api/profile", {
-        headers: { Authorization: `Bearer ${token}` }, // JWT token in header
-      });
+        console.log("User response:", response.data);
+        setUser(response.data.user); // set user state
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch user data");
+        setLoading(false);
+      }
+    };
 
-      console.log("User response:", response.data); // <-- ADD THIS LINE
-      setUser(response.data.user); // set user state
-      setLoading(false);
-    } catch (err) {
-      console.error(err); // <-- ADD THIS LINE
-      setError("Failed to fetch user data");
-      setLoading(false);
-    }
-  };
-
-  fetchUserData();
-}, [navigate]);
-
+    fetchUserData();
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -44,17 +45,65 @@ const DashboardPage = () => {
   if (error) return <div>{error}</div>;
 
   return (
-    <div className="max-w-2xl mx-auto p-8 mt-20 bg-white rounded-lg shadow-xl">
-      <h1 className="text-3xl font-semibold text-center mb-6">Dashboard</h1>
-      {user && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-medium">Welcome, {user.username}!</h2>
-          <p className="text-lg">Email: {user.email}</p>
-          <button onClick={handleLogout} className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">
-            Logout
-          </button>
+    <div className="flex min-h-screen bg-gray-50 pt-16">
+      <SideNav /> {/* Use the SideNav component */}
+      <div className="flex-1 bg-white p-8 ml-64">
+        <TopNav /> {/* Use the TopNav component */}
+        <div className="container mx-auto p-6">
+
+          {/* Group 1: Welcome Text + Button with Image on the Right */}
+          <div className="flex items-center bg-[#fff5f0] p-8 rounded-md mb-12">
+            {/* Left side - Text and Button */}
+            <div className="flex flex-col w-1/2">
+              <h1 className="text-3xl font-semibold text-black text-left mb-6">
+                Welcome, Ampower Team!
+              </h1>
+              <p className="text-lg text-black text-left mb-8">
+                Gain comprehensive control and insights over all church operations and system settings. Your central hub for management.
+              </p>
+              <div className="text-left">
+                <button className="bg-orange-500 text-white py-2 px-6 rounded-md hover:bg-orange-600">
+                  View All Churches
+                </button>
+              </div>
+            </div>
+
+            {/* Right side - Image */}
+            <div className="w-1/2 content-center">
+              <img
+                src={RightImg}  
+                alt="Ampower"
+                className="w-120 h-80 object-fill rounded-md justify-self-center "
+              />
+            </div>
+          </div>
+
+          {/* Group 2: Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className=" p-6 rounded-lg shadow-md text-center">
+              <h2 className="text-2xl text-left font-semibold">Total Registered Churches</h2>
+              <p className="text-[34px] text-left font-bold text-gray-700 mt-4">5</p>
+              <p className="text-sm text-left text-gray-700 font-semibold mt-4">Overall churches in the system</p>
+            </div>
+            <div className=" p-6 rounded-lg shadow-md text-center">
+              <h2 className="text-2xl text-left font-semibold">Pending Registrations</h2>
+              <p className="text-[34px]  text-left font-bold text-gray-700 mt-4">2</p>
+               <p className="text-sm text-left text-gray-700 font-semibold mt-4">Awaiting your approval</p>
+            </div>
+            <div className=" p-6 rounded-lg shadow-md text-center">
+              <h2 className="text-2xl text-left font-semibold">Total Approved Churches</h2>
+              <p className="text-[34px]  text-left font-bold text-gray-700 mt-4">2</p>
+               <p className="text-sm text-left text-gray-700 font-semibold mt-4">Overall approved in the system</p>
+            </div>
+            <div className=" p-6 rounded-lg shadow-md text-center">
+              <h2 className="text-2xl text-left font-semibold">Total Rejected Churches</h2>
+              <p className="text-[34px] text-left font-bold text-gray-700 mt-4">1</p>
+               <p className="text-sm text-left text-gray-700 font-semibold mt-4">Awaiting your approval</p>
+            </div>
+          </div>
+
         </div>
-      )}
+      </div>
     </div>
   );
 };

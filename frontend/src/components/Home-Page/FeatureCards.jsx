@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-// ✅ Import the tear PNG (with spaces in the filename)
+
 import tearPng from "/src/assets/images/FRAMEWHITE1.png";
 
 const items = [
