@@ -1,0 +1,18 @@
+// models/ChurchApplication.js
+import mongoose from "mongoose";
+
+const churchApplicationSchema = new mongoose.Schema(
+  {
+    churchName: { type: String, required: true, trim: true },
+    address: { type: String, required: true, trim: true },
+    email: { type: String, required: true, lowercase: true, trim: true, index: true },
+    contactNumber: { type: String, required: true, trim: true },
+    certificatePath: { type: String, required: true }, // /uploads/certificates/...
+    status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending", index: true },
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    notes: String,
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("ChurchApplication", churchApplicationSchema);

@@ -42,7 +42,7 @@ const handleSubmit = async (e) => {
     });
     console.log(response.data); // Check the response from the backend
     localStorage.setItem("token", response.data.token);
-    navigate("/verify-otp", { state: { email } });  // Ensure navigation happens here
+   navigate("/verify-otp-registration", { state: { email, role: "member" } });
   } catch (err) {
     setError(err.response?.data?.message || "Something went wrong!");
   }
@@ -127,7 +127,7 @@ const handleVerify = async () => {
               {/* Right: Form */}
               <div className="border-t md:border-t-0 md:border-l border-black/5 p-8 sm:p-10 md:p-12">
                 <h1 className="font-serif text-[28px] sm:text-[32px] font-extrabold text-[#1F2937]">
-                  Sign Up
+                  Parishioner/Member
                 </h1>
                 <p className="mt-1 text-sm text-[#6B7280]">
                   Join AmPower and strengthen your ministry.

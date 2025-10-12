@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import SideNav from "../components/Super-admin/SideNav"; // Import SideNav component
-import TopNav from "../components/Super-admin/TopNav"; // Import TopNav component
-import RightImg from "../assets/images/jc.jpg";
+import SideNav from "../../components/Super-admin/SideNav"; // Import SideNav component
+import TopNav from "../../components/Super-admin/TopNav"; // Import TopNav component
+import RightImg from "../../assets/images/jc.jpg";
+import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter";
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -52,10 +53,10 @@ const DashboardPage = () => {
         <div className="container mx-auto p-6">
 
           {/* Group 1: Welcome Text + Button with Image on the Right */}
-          <div className="flex items-center bg-[#fff5f0] p-8 rounded-md mb-12">
+          <div className="flex items-start  bg-[#fff5f0] pl-8 rounded-md mb-12">
             {/* Left side - Text and Button */}
-            <div className="flex flex-col w-1/2">
-              <h1 className="text-3xl font-semibold text-black text-left mb-6">
+            <div className="flex flex-col w-1/2 ">
+              <h1 className="text-3xl font-semibold text-black text-left mb-6 mt-5 ">
                 Welcome, Ampower Team!
               </h1>
               <p className="text-lg text-black text-left mb-8">
@@ -101,10 +102,13 @@ const DashboardPage = () => {
                <p className="text-sm text-left text-gray-700 font-semibold mt-4">Awaiting your approval</p>
             </div>
           </div>
-
-        </div>
+          <ChurchInfoFooter />
+        </div> 
+       
       </div>
+       
     </div>
+    
   );
 };
 

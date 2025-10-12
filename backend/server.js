@@ -83,31 +83,35 @@ app.post("/api/orders", auth, async (req, res) => {
 // ------------------- User Routes -------------------
 
 app.post("/api/register", async (req, res) => {
-  const { username, email: rawEmail, password } = req.body;
-  const email = (rawEmail || "").toLowerCase().trim();
-
-  // Check if user already exists
-  const existingUser = await User.findOne({ email });
-  if (existingUser) return res.status(400).json({ message: "Email already in use" });
-
-  // Generate OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiry = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
-
-  // Temporarily store OTP (in a separate collection or temp field)
-  const otpUser = new User({ email, otp, otpExpiry: expiry });
-  await otpUser.save(); // Store in a temporary "OTP" user record
-
-  // Send OTP to user's email
   try {
-    await sendOTPEmail(email, otp);  // Send OTP via email
+    const { username, email: rawEmail, password } = req.body;
+    const email = (rawEmail || "").toLowerCase().trim();
+
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ message: "Email already in use" });
+
+    const hash = await bcrypt.hash(password, 12);
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    await User.create({
+      username,
+      email,
+      password: hash,
+      isVerified: false,
+      role: "member",
+      regOTP: otp,
+      regOTPExpiry: expiry,
+    });
+
+    await sendOTPEmail(email, `Your AmPower verification code is: ${otp}`);
     res.status(200).json({ message: "OTP sent to your email. Please verify it." });
   } catch (err) {
-    console.error("Failed to send OTP email:", err);
-    res.status(500).json({ message: "Failed to send OTP email" });
+    console.error("register error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
-
 
 
 // Login
@@ -128,6 +132,9 @@ app.post("/api/login", async (req, res) => {
         message:
           'This account is linked to Google. Use "Continue with Google" or set a password via "Forgot Password".',
       });
+    }
+    if (!user.isVerified) {
+      return res.status(403).json({ message: "Please verify your email before logging in." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -205,36 +212,44 @@ app.post("/api/reset-password", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-// Backend: OTP verification for registration (create user after OTP verification)
 app.post("/api/verify-otp-registration", async (req, res) => {
-  const { email, otp } = req.body;
-  const otpUser = await User.findOne({ email });
+  const { email: rawEmail, otp } = req.body;
+  const email = (rawEmail || "").toLowerCase().trim();
 
-  if (!otpUser) return res.status(400).json({ message: "No user found with this email." });
-  if (otpUser.otp !== otp) return res.status(400).json({ message: "Invalid OTP." });
-  if (new Date() > otpUser.otpExpiry) return res.status(400).json({ message: "OTP expired." });
+  const user = await User.findOne({ email });
+  if (!user) return res.status(400).json({ message: "No user found with this email." });
+  if (user.isVerified) return res.status(200).json({ message: "Already verified." });
 
-  // OTP is valid, now create the user
-  try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 12);  // Create user with password
-    const newUser = new User({
-      username: req.body.username,
-      email,
-      password: hashedPassword
-    });
+  if (user.regOTP !== otp) return res.status(400).json({ message: "Invalid OTP." });
+  if (new Date() > user.regOTPExpiry) return res.status(400).json({ message: "OTP expired." });
 
-    await newUser.save();
-    res.status(201).json({ message: "User successfully registered!" });
+  user.isVerified = true;
+  user.regOTP = undefined;
+  user.regOTPExpiry = undefined;
+  await user.save();
 
-    // Optionally, delete the temporary OTP user record
-    await otpUser.remove();
-  } catch (error) {
-    console.error("Error creating user:", error);
-    res.status(500).json({ message: "Error creating user" });
-  }
+  res.json({ message: "Email verified." });
 });
 
+app.post("/api/resend-otp-registration", async (req, res) => {
+  const email = (req.body.email || "").toLowerCase().trim();
+  const user = await User.findOne({ email });
+  if (!user) return res.status(400).json({ message: "Email not found." });
+  if (user.isVerified) return res.status(400).json({ message: "Account already verified." });
 
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  user.regOTP = otp;
+  user.regOTPExpiry = new Date(Date.now() + 10 * 60 * 1000);
+  await user.save();
+
+  try {
+    await sendOTPEmail(email, `Your new AmPower verification code is: ${otp}`);
+    res.json({ message: "OTP sent." });
+  } catch (e) {
+    console.error("resend-otp-registration error:", e);
+    res.status(500).json({ message: "Failed to send OTP email" });
+  }
+});
 
 // ------------------- Start Server -------------------
 const PORT = process.env.PORT || 4000;
