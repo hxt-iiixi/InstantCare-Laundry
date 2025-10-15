@@ -1,65 +1,154 @@
-import React from "react";
+// src/pages/Super-Admin/AccountControlPage.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import TopNav from "../../components/Super-admin/TopNav";
 import SideNav from "../../components/Super-admin/SideNav";
 import Footer from "../../components/Home-Page/ChurchInfoFooter";
+import { api } from "../../lib/api";
 import badgeIcon from "/src/assets/icons/acc.png";
 
-const rows = [
-  { name: "St. Mary’s Parish", location: "New York, NY", email: "stmaryparish@gr...", contact: "09998223471", cert: true, status: "Approved", date: "2023-01-15" },
-  { name: "Trinity Chapel", location: "Los Angeles, CA", email: "trinitychapel@gm...", contact: "09123456789", cert: true, status: "Pending",  date: "2023-02-20" },
-  { name: "First Baptist Chu…", location: "Chicago, IL", email: "firstbaptist@gm...", contact: "098765456789", cert: true, status: "Approved", date: "2023-03-10" },
-  { name: "Community of Ho…", location: "Houston, TX", email: "community@gm...", contact: "092618790867", cert: true, status: "Rejected", date: "2023-04-05" },
-  { name: "Grace Cathedral", location: "San Francisco, CA", email: "gracecathedral@gm", contact: "09475178690", cert: true, status: "Pending",  date: "2023-05-12" },
-];
+const API_ORIGIN = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
+const cap = (s = "") => s.charAt(0).toUpperCase() + s.slice(1);
 
 const StatusPill = ({ value }) => {
+  const v = cap(String(value || ""));
   const cfg =
     {
       Approved: { dot: "bg-emerald-500", pill: "bg-emerald-100 text-emerald-700" },
-      Pending:  { dot: "bg-amber-500",  pill: "bg-amber-100 text-amber-700" },
-      Rejected: { dot: "bg-rose-500",   pill: "bg-rose-100 text-rose-700" },
-    }[value] || { dot: "bg-zinc-400", pill: "bg-zinc-100 text-zinc-700" };
+      Pending: { dot: "bg-amber-500", pill: "bg-amber-100 text-amber-700" },
+      Rejected: { dot: "bg-rose-500", pill: "bg-rose-100 text-rose-700" },
+    }[v] || { dot: "bg-zinc-400", pill: "bg-zinc-100 text-zinc-700" };
 
   return (
     <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${cfg.pill}`}>
       <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
-      {value}
+      {v}
     </span>
   );
 };
 
-const TableBtn = ({ kind = "neutral", children }) => {
+const TableBtn = ({ kind = "neutral", children, ...props }) => {
   const styles = {
     neutral: "bg-zinc-100 hover:bg-zinc-200 text-zinc-800",
     approve: "bg-emerald-600 hover:bg-emerald-700 text-white",
+    reject: "bg-rose-500 hover:bg-rose-600 text-white",
   }[kind];
-  return <button className={`px-3 py-1 rounded-md text-sm transition ${styles}`}>{children}</button>;
+  return (
+    <button className={`px-3 py-1 rounded-md text-sm transition ${styles}`} {...props}>
+      {children}
+    </button>
+  );
 };
 
-const ToolbarBtn = ({ kind = "reject", children }) => {
+const ToolbarBtn = ({ kind = "reject", children, ...props }) => {
   const styles = {
     reject: "bg-rose-500 hover:bg-rose-600 text-white",
     approve: "bg-emerald-600 hover:bg-emerald-700 text-white",
   }[kind];
-  return <button className={`px-4 py-2 rounded-md text-sm font-medium transition ${styles}`}>{children}</button>;
+  return (
+    <button className={`px-4 py-2 rounded-md text-sm font-medium transition ${styles}`} {...props}>
+      {children}
+    </button>
+  );
 };
 
-const AccountControlPage = () => {
+export default function AccountControlPage() {
+  const [loading, setLoading] = useState(false);
+  const [rows, setRows] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [query, setQuery] = useState("");
+
+  // fetch applications
+  const fetchApps = async () => {
+    try {
+      setLoading(true);
+      const params = {};
+      if (statusFilter !== "all") params.status = statusFilter; // pending|approved|rejected
+      const { data } = await api.get("/api/church-admin/applications", { params });
+      setRows(Array.isArray(data) ? data : []);
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Failed to load applications.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApps();
+  }, [statusFilter]);
+
+  
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) =>
+      [r.churchName, r.address, r.email, r.contactNumber].some((v) => String(v || "").toLowerCase().includes(q))
+    );
+  }, [rows, query]);
+
+  const openCertificate = (path) => {
+    if (!path) return;
+    const url = new URL(path, API_ORIGIN).href; 
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const approveOne = async (id) => {
+    try {
+      await api.patch(`/api/church-admin/applications/${id}/approve`);
+      toast.success("Application approved.");
+
+      setRows((prev) => prev.map((r) => (r._id === id ? { ...r, status: "approved" } : r)));
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Failed to approve.");
+    }
+  };
+
+  const rejectOne = async (id) => {
+    try {
+      await api.patch(`/api/church-admin/applications/${id}/reject`);
+      toast.success("Application rejected.");
+      setRows((prev) => prev.map((r) => (r._id === id ? { ...r, status: "rejected" } : r)));
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Failed to reject.");
+    }
+  };
+
+  const approveAll = async () => {
+    const ids = filtered.filter((r) => r.status !== "approved").map((r) => r._id);
+    if (!ids.length) return toast.message("Nothing to approve.");
+    try {
+      await Promise.all(ids.map((id) => api.patch(`/api/church-admin/applications/${id}/approve`)));
+      toast.success("Approved selected applications.");
+      setRows((prev) => prev.map((r) => (ids.includes(r._id) ? { ...r, status: "approved" } : r)));
+    } catch {
+      toast.error("Bulk approve failed. Try individually.");
+    }
+  };
+
+  const rejectAll = async () => {
+    const ids = filtered.map((r) => r._id);
+    if (!ids.length) return toast.message("Nothing to reject.");
+    try {
+      await Promise.all(ids.map((id) => api.patch(`/api/church-admin/applications/${id}/reject`)));
+      toast.success("Rejected selected applications.");
+      setRows((prev) => prev.map((r) => (ids.includes(r._id) ? { ...r, status: "rejected" } : r)));
+    } catch {
+      toast.error("Bulk reject failed. Try individually.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Fixed Top Nav (64px/16) */}
       <header className="fixed inset-x-0 top-0 z-30 h-16 bg-white border-b">
         <TopNav />
       </header>
 
-      {/* ROW: SideNav + Main (offset by top nav) */}
       <div className="pt-16 flex flex-1">
-        {/* Sidebar column with visual separation */}
         <aside className="hidden md:block w-64 shrink-0 border-r bg-white sticky top-16 h-[calc(100vh-4rem)]">
           <SideNav />
         </aside>
 
-        {/* Main column */}
         <main className="flex-1 p-6 lg:p-10">
           <section className="bg-stone-100 rounded-xl border border-zinc-200 p-5 lg:p-6">
             <div className="mb-5">
@@ -70,17 +159,18 @@ const AccountControlPage = () => {
                 </h1>
               </div>
               <p className="text-sm md:text-[14px] text-zinc-600 mt-2 max-w-3xl">
-                Manage and oversee all church accounts and registration requests with ease. Review, approve, or update church profiles to
-                maintain accurate and organized records across the system.
+                Review incoming church applications, verify certificates, and approve or reject access.
               </p>
             </div>
 
             <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-4 md:p-5">
-              {/* Toolbar */}
+    
               <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-4">
                 <div className="flex-1">
                   <input
                     type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search churches..."
                     className="w-full rounded-md border border-zinc-300 bg-white py-2.5 pl-4 pr-4 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-orange-300"
                   />
@@ -88,7 +178,8 @@ const AccountControlPage = () => {
 
                 <select
                   className="w-full md:w-[160px] rounded-md border border-zinc-300 bg-white py-2.5 px-3 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                  defaultValue="all"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
                 >
                   <option value="all">All Statuses</option>
                   <option value="approved">Approved</option>
@@ -97,8 +188,12 @@ const AccountControlPage = () => {
                 </select>
 
                 <div className="flex items-center gap-2 md:ml-auto">
-                  <ToolbarBtn kind="reject">Reject All</ToolbarBtn>
-                  <ToolbarBtn kind="approve">Approve All</ToolbarBtn>
+                  <ToolbarBtn kind="reject" onClick={rejectAll}>
+                    Reject All
+                  </ToolbarBtn>
+                  <ToolbarBtn kind="approve" onClick={approveAll}>
+                    Approve All
+                  </ToolbarBtn>
                 </div>
               </div>
 
@@ -118,31 +213,63 @@ const AccountControlPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-200">
-                    {rows.map((r, i) => (
-                      <tr key={i} className="text-sm">
-                        <td className="py-4 px-4 text-zinc-900">{r.name}</td>
-                        <td className="py-4 px-4 text-zinc-700">{r.location}</td>
-                        <td className="py-4 px-4 text-zinc-700">{r.email}</td>
-                        <td className="py-4 px-4 text-zinc-700">{r.contact}</td>
-                        <td className="py-4 px-4">
-                          {r.cert ? (
-                            <button className="text-orange-600 hover:text-orange-700 font-medium">View</button>
-                          ) : (
-                            <span className="text-zinc-400">—</span>
-                          )}
-                        </td>
-                        <td className="py-4 px-4">
-                          <StatusPill value={r.status} />
-                        </td>
-                        <td className="py-4 px-4 text-zinc-700">{r.date}</td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2">
-                            {r.status !== "Approved" && <TableBtn kind="approve">Approve</TableBtn>}
-                            <TableBtn>Edit Details</TableBtn>
-                          </div>
+                    {loading && (
+                      <tr>
+                        <td colSpan={8} className="py-8 text-center text-sm text-zinc-500">
+                          Loading…
                         </td>
                       </tr>
-                    ))}
+                    )}
+
+                    {!loading && filtered.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="py-8 text-center text-sm text-zinc-500">
+                          No applications found.
+                        </td>
+                      </tr>
+                    )}
+
+                    {!loading &&
+                      filtered.map((r) => (
+                        <tr key={r._id} className="text-sm">
+                          <td className="py-4 px-4 text-zinc-900">{r.churchName}</td>
+                          <td className="py-4 px-4 text-zinc-700">{r.address}</td>
+                          <td className="py-4 px-4 text-zinc-700">{r.email}</td>
+                          <td className="py-4 px-4 text-zinc-700">{r.contactNumber || "—"}</td>
+                          <td className="py-4 px-4">
+                            {r.certificatePath ? (
+                              <button
+                                onClick={() => openCertificate(r.certificatePath)}
+                                className="text-orange-600 hover:text-orange-700 font-medium"
+                              >
+                                View
+                              </button>
+                            ) : (
+                              <span className="text-zinc-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            <StatusPill value={r.status} />
+                          </td>
+                          <td className="py-4 px-4 text-zinc-700">
+                            {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center gap-2">
+                              {r.status !== "approved" && (
+                                <TableBtn kind="approve" onClick={() => approveOne(r._id)}>
+                                  Approve
+                                </TableBtn>
+                              )}
+                              {r.status !== "rejected" && (
+                                <TableBtn kind="reject" onClick={() => rejectOne(r._id)}>
+                                  Reject
+                                </TableBtn>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -151,12 +278,9 @@ const AccountControlPage = () => {
         </main>
       </div>
 
-      {/* FULL-WIDTH FOOTER */}
-    <footer className="mt-8 border-t border-zinc-200 bg-white w-full ml-0 md:ml-64">
+      <footer className="mt-8 border-t border-zinc-200 bg-white w-full ml-0 md:ml-64">
         <Footer />
-    </footer>
+      </footer>
     </div>
   );
-};
-
-export default AccountControlPage;
+}

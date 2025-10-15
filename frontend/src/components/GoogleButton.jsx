@@ -14,8 +14,6 @@ export default function GoogleButton() {
           const credential = res?.credential;
           const { data } = await api.post("/api/auth/google", { credential });
           localStorage.setItem("token", data.token);
-
-          // Pre-fill email for UX in create-password page or fallback login
           if (data?.user?.email) localStorage.setItem("prefillEmail", data.user.email);
 
           if (data.needsPassword) {
@@ -23,10 +21,18 @@ export default function GoogleButton() {
             navigate("/create-password", { replace: true });
           } else {
             toast.success("Signed in with Google");
-            navigate("/dashboard", { replace: true });
+            navigate("/dashboard");
           }
         } catch (e) {
-          toast.error(e?.response?.data?.message || "Google sign-in failed");
+          const status = e?.response?.status;
+          const code = e?.response?.data?.code;
+          const msg = e?.response?.data?.message;
+
+          if (status === 403 && code === "UNDER_REVIEW") {
+            toast.info("Your church admin application is under review. We’ll email you once it’s approved.");
+            return;
+          }
+          toast.error(msg || "Google sign-in failed");
         }
       }}
       onError={() => toast.error("Google sign-in cancelled")}

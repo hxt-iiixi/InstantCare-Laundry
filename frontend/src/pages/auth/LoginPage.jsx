@@ -41,16 +41,34 @@ const LoginPage = () => {
     }
   }, [location.state]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post("http://localhost:4000/api/login", { email, password });
-      localStorage.setItem("token", response.data.token);
-      navigate("/dashboard");
-    } catch (err) {
-      setError(err.response?.data?.message || "Invalid credentials. Please try again.");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const { data } = await axios.post("http://localhost:4000/api/login", { email, password });
+    localStorage.setItem("token", data.token);
+    navigate("/dashboard");
+  } catch (err) {
+    const status = err?.response?.status;
+    const msg = err?.response?.data?.message || "Invalid credentials. Please try again.";
+
+    // Special handling: admin under review
+    if (status === 403 && err?.response?.data?.code === "UNDER_REVIEW") {
+      setError(""); // don't show inline red error
+      toast.info("Your church admin application is under review. We’ll email you once it’s approved.");
+      return;
     }
-  };
+
+    // Unverified email (member)
+    if (status === 403 && msg.toLowerCase().includes("verify your email")) {
+      setError("");
+      toast.info("Please verify your email first. We’ve sent you a verification code.");
+      return;
+    }
+
+    setError(msg);
+  }
+};
+
 
   return (
     <>
@@ -188,31 +206,43 @@ const LoginPage = () => {
 
                 {/* Google login */}
                 <div className="w-full">
-                  <GoogleLogin
-                    onSuccess={async (res) => {
-                      try {
-                        const credential = res?.credential;
-                        const { data } = await api.post("/api/auth/google/login", { credential });
-                        localStorage.setItem("token", data.token);
-                        if (data?.user?.email) localStorage.setItem("prefillEmail", data.user.email);
-                        toast.success("Welcome back!");
-                        navigate("/dashboard");
-                      } catch (e) {
-                        const status = e?.response?.status;
-                        const msg =
-                          status === 404
-                            ? "No account found for this Google email. Please register first."
-                            : e?.response?.data?.message || "Google sign-in failed.";
-                        toast.error(msg);
-                        if (status === 404) navigate("/register", { replace: true });
-                      }
-                    }}
-                    onError={() => toast.error("Google sign-in cancelled")}
-                    ux_mode="popup"
-                    text="continue_with"
-                    shape="pill"
-                    size="large"
-                  />
+                 <GoogleLogin
+                      onSuccess={async (res) => {
+                        try {
+                          const credential = res?.credential;
+                          const { data } = await api.post("/api/auth/google/login", { credential });
+                          localStorage.setItem("token", data.token);
+                          if (data?.user?.email) localStorage.setItem("prefillEmail", data.user.email);
+                          toast.success("Welcome back!");
+                          navigate("/dashboard");
+                        } catch (e) {
+                          const status = e?.response?.status;
+                          const code = e?.response?.data?.code;
+                          const msg = e?.response?.data?.message;
+
+                          if (status === 403 && code === "UNDER_REVIEW") {
+                            toast.info("Your church admin application is under review. We’ll email you once it’s approved.");
+                            return;
+                          }
+                          if (status === 404) {
+                            toast.error("No account found for this Google email. Please register first.");
+                            navigate("/register", { replace: true });
+                            return;
+                          }
+                          if (status === 401) {
+                            toast.error("Google sign-in failed. Check OAuth Client ID and authorized origins.");
+                            return;
+                          }
+                          toast.error(msg || "Google sign-in failed.");
+                        }
+                      }}
+                      onError={() => toast.error("Google sign-in cancelled")}
+                      ux_mode="popup"
+                      text="continue_with"
+                      shape="pill"
+                      size="large"
+                    />
+
                 </div>
 
                 {/* Links */}

@@ -8,13 +8,17 @@ import User from "./models/User.js";
 import auth from "./middleware/auth.js";
 import { sendOTPEmail } from "./utils/mailer.js";
 import { OAuth2Client } from "google-auth-library";
+import churchAdminRoutes from "./routes/churchAdminRoutes.js";
+import ChurchApplication from "./models/ChurchApplication.js";
+import path from "path";
 dotenv.config();
 
 const app = express();
 app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
+app.use("/api/church-admin", churchAdminRoutes); 
 
-// ------------------- Services & Orders Models -------------------
 
 const ServiceSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -44,13 +48,48 @@ const Order = mongoose.model("Order", OrderSchema);
 function signToken(user) {
   return jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" });
 }
-// ------------------- Routes -------------------
 
-// Health check
+ async function ensureChurchAdminApproved(user) {
+  if (user?.role === "church-admin") {
+    const app = await ChurchApplication.findOne({ email: user.email.toLowerCase() }).lean();
+    if (!app || app.status !== "approved") {
+      const err = new Error("Your church admin application is under review. You’ll be able to log in once it’s approved.");
+      err.status = 403;
+      err.code = "UNDER_REVIEW";
+      throw err;
+    }
+  }
+}
+async function seedSuperAdmin() {
+  const email = "AmpowerAdmin@gmail.com".toLowerCase(); 
+  const plain = "Ampower123";
+
+  let user = await User.findOne({ email });
+  const hash = await bcrypt.hash(plain, 12);
+
+  if (!user) {
+    user = await User.create({
+      email,
+      username: "AmPower Super Admin",
+      name: "AmPower Super Admin",
+      password: hash,
+      role: "superadmin",
+      isVerified: true,
+    });
+    console.log("✅ Super admin created:", email);
+  } else {
+    // keep it enforced as superadmin with the given password & verified
+    user.role = "superadmin";
+    user.isVerified = true;
+    user.password = hash;
+    await user.save();
+    console.log("✅ Super admin ensured:", email);
+  }
+}
 app.get("/", (_req, res) => res.send("Welcome to InstantCare Laundry API!"));
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
-// ------------------- Services -------------------
+
 app.get("/api/services", async (_req, res) => {
   const items = await Service.find().lean();
   res.json(items);
@@ -65,7 +104,7 @@ app.post("/api/services", async (req, res) => {
   }
 });
 
-// ------------------- Orders (Protected) -------------------
+
 app.get("/api/orders", auth, async (_req, res) => {
   const items = await Order.find().populate("serviceId").lean();
   res.json(items);
@@ -80,7 +119,7 @@ app.post("/api/orders", auth, async (req, res) => {
   }
 });
 
-// ------------------- User Routes -------------------
+
 
 app.post("/api/register", async (req, res) => {
   try {
@@ -126,12 +165,14 @@ app.post("/api/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // If the account was created with Google, there's no password to compare
+    if (user.role !== "superadmin" && !user.isVerified) {
+      return res.status(403).json({ message: "Please verify your email before logging in." });
+    }
     if (!user.password) {
       return res.status(400).json({
         message:
           'This account is linked to Google. Use "Continue with Google" or set a password via "Forgot Password".',
-      });
+      });c
     }
     if (!user.isVerified) {
       return res.status(403).json({ message: "Please verify your email before logging in." });
@@ -148,19 +189,21 @@ app.post("/api/login", async (req, res) => {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
+
+
 });
 
 
-// Protected profile route
+
 app.get("/api/profile", auth, (req, res) => {
   res.json({ user: req.user });
 });
 
-// ------------------- Forget Password Flow -------------------
+
 
 // 1) Request OTP
 app.post("/api/forget-password", async (req, res) => {
-  const email = (req.body.email || "").toLowerCase().trim();   // 👈 normalize
+  const email = (req.body.email || "").toLowerCase().trim();   // normalize
   const user = await User.findOne({ email });
   if (!user) return res.status(400).json({ message: "Email not found" });
 
@@ -258,6 +301,7 @@ async function start() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MongoDB connected");
+     await seedSuperAdmin();
     app.listen(PORT, () => console.log(`✅ API running on http://localhost:${PORT}`));
   } catch (err) {
     console.error("❌ MongoDB connection failed:", err.message);
@@ -271,14 +315,14 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Google OAuth: verify ID token, find-or-create user, return app JWT
 app.post("/api/auth/google", async (req, res) => {
   try {
-    const { credential } = req.body; // Google ID token from the frontend
+    const { credential } = req.body;
     if (!credential) return res.status(400).json({ message: "Missing credential" });
 
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-    const payload = ticket.getPayload(); // { email, email_verified, name, picture, sub, ... }
+    const payload = ticket.getPayload();
 
     if (!payload?.email || !payload?.email_verified) {
       return res.status(401).json({ message: "Google account not verified." });
@@ -289,24 +333,28 @@ app.post("/api/auth/google", async (req, res) => {
     const name = payload.name || email.split("@")[0];
     const avatar = payload.picture;
 
-    // Find or create user
     let user = await User.findOne({ email });
+
     if (!user) {
+      // New user created via Google is a member by default
       user = await User.create({
         email,
         name,
-        username: name,     // keeps parity with your register payload
+        username: name,
         avatar,
         googleId,
-        password: undefined // no password for Google users
+        password: undefined,
+        // role default in schema should be "member"
       });
     } else if (!user.googleId) {
-      // Link Google to an existing email/password account
       user.googleId = googleId;
       user.name ??= name;
       user.avatar ??= avatar;
       await user.save();
     }
+
+    // block pending church-admins here too
+    await ensureChurchAdminApproved(user);
 
     const token = signToken(user);
     return res.json({
@@ -315,10 +363,14 @@ app.post("/api/auth/google", async (req, res) => {
       needsPassword: !user.password,
     });
   } catch (err) {
-    console.error("Google OAuth error:", err);
+    if (err.code === "UNDER_REVIEW") {
+      return res.status(403).json({ message: err.message, code: err.code });
+    }
+    console.error("Google OAuth error:", err?.message || err);
     return res.status(401).json({ message: "Google sign-in failed." });
   }
 });
+
 
 // Set / create a local password for the current (Google-authenticated) user
 app.post("/api/set-password", auth, async (req, res) => {
@@ -340,7 +392,7 @@ app.post("/api/set-password", auth, async (req, res) => {
   }
 });
 
-// LOGIN-ONLY with Google (no auto-create)
+// LOGIN-ONLY with Google 
 app.post("/api/auth/google/login", async (req, res) => {
   try {
     const { credential } = req.body;
@@ -361,7 +413,7 @@ app.post("/api/auth/google/login", async (req, res) => {
       return res.status(404).json({ message: "No account with this Google email. Please register first." });
     }
 
-    // link googleId if it wasn't saved yet
+    // link googleId if missing
     if (!user.googleId) {
       user.googleId = payload.sub;
       user.avatar ??= payload.picture;
@@ -369,14 +421,23 @@ app.post("/api/auth/google/login", async (req, res) => {
       await user.save();
     }
 
+    // ✅ block pending admins
+    await ensureChurchAdminApproved(user);
+
     const token = signToken(user);
     return res.json({
       token,
       user: { username: user.username || user.name, email: user.email, name: user.name, avatar: user.avatar },
     });
   } catch (err) {
-    console.error("Google login-only error:", err);
+    // If our guard threw:
+    if (err.code === "UNDER_REVIEW") {
+      return res.status(403).json({ message: err.message, code: err.code });
+    }
+    // Otherwise it's a token/audience/origin issue etc.
+    console.error("Google login-only error:", err?.message || err);
     return res.status(401).json({ message: "Google sign-in failed." });
   }
 });
+
 start();

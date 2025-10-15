@@ -14,8 +14,8 @@ import auth from "../middleware/auth.js";
 import isAdmin from "../middleware/isAdmin.js";
 
 const router = express.Router();
+router.get("/ping", (_req, res) => res.json({ ok: true, at: "/api/church-admin/ping" }));
 
-// uploads
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, "uploads/certificates"),
   filename: (_req, file, cb) => {
@@ -30,10 +30,10 @@ const fileFilter = (_req, file, cb) => {
 };
 const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
-// public submit
+
 router.post("/register", upload.single("certificate"), registerChurchAdmin);
 
-// admin review
+
 router.get("/applications", auth, isAdmin, listApplications);
 router.get("/applications/:id", auth, isAdmin, getApplication);
 router.patch("/applications/:id/approve", auth, isAdmin, approveApplication);

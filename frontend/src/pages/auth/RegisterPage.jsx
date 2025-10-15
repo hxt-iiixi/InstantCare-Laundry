@@ -202,23 +202,7 @@ const handleVerify = async () => {
                     </div>
                   </label>
 
-                  {/* Role Selection (visual only, no backend change) */}
-                  <label className="block">
-                    <span className="block text-xs font-medium text-gray-600 mb-1">
-                      Role Selection
-                    </span>
-                    <div className="relative">
-                      <img src={iconChevron} alt="" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
-                      <input
-                        type="text"
-                        placeholder="What is your role?"
-                        className="w-full rounded-md border border-gray-300 pl-3 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C52] focus:border-transparent"
-                        readOnly
-                        onFocus={(e) => e.target.blur()} // purely presentational like the mock
-                      />
-                    </div>
-                  </label>
-
+                 
                   {error && (
                     <p className="text-red-500 text-center text-sm">{error}</p>
                   )}
