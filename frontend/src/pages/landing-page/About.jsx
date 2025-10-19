@@ -19,8 +19,8 @@ import ampowerLogo from "../../assets/icons/ampower-ehite.png";
 import fbIcon from "../../assets/icons/facebook-white.svg";
 import twIcon from "../../assets/icons/twitter-white.svg";
 import igIcon from "../../assets/icons/instagram-white.svg";
-
-
+import BackgroundMusic from "../../components/BackgroundMusic";
+import GlobalLayout from "../../components/PersistentLayout";
 export default function About() {
 
   const [leftIdx, setLeftIdx] = useState(1); // when offset=0, LEFT is index 1
@@ -51,7 +51,8 @@ export default function About() {
 
   return (
     <>
-      <Navbar />
+      <GlobalLayout>
+        <Navbar />
 
       {/* SECTION 1: Top hero */}
       <section className="relative">
@@ -447,7 +448,9 @@ export default function About() {
         </div>
       </div>
     </footer>
-
+      <BackgroundMusic />          
+      </GlobalLayout>
+      
     </>
   );
 }

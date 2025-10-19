@@ -2,10 +2,11 @@ import React from "react";
 import { Phone, Mail, MapPin, Send } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter";  
-
+import BackgroundMusic from "../../components/BackgroundMusic";
+import GlobalLayout from "../../components/PersistentLayout";
 export default function Contact() {
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-800">
+     <GlobalLayout><div className="min-h-screen bg-white font-sans text-gray-800">
       {/* Header Section */}
 
       <Navbar />
@@ -114,6 +115,9 @@ export default function Contact() {
         </div>
       </section>
         <ChurchInfoFooter />
+        <BackgroundMusic />
     </div>
+    </GlobalLayout>
+    
   );
 }

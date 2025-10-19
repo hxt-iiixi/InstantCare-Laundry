@@ -6,18 +6,23 @@ import UpcomingEvents from "../../components/Home-Page/UpcomingEvents";
 import LeadershipTeam from "../../components/Home-Page/LeadershipTeam";
 import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter";
 import ReflectionPrompts from "../../components/Home-Page/ReflectionPrompts";
-
+import BackgroundMusic from "../../components/BackgroundMusic";
+import GlobalLayout from "../../components/PersistentLayout";
 export default function Home() {
   return (
     <>
-      <Navbar />
-      <Hero />
-      <FeatureCards />
-      <DevotionBanner />
-      <ReflectionPrompts />
-      <UpcomingEvents />
-      <LeadershipTeam />
-      <ChurchInfoFooter />
+      <GlobalLayout> 
+        <Navbar />
+        <Hero />
+        <FeatureCards />
+        <DevotionBanner />
+        <ReflectionPrompts />
+        <UpcomingEvents />
+        <LeadershipTeam />
+        <ChurchInfoFooter />
+        <BackgroundMusic />
+      </GlobalLayout>
+     
     </>
   );
 }
