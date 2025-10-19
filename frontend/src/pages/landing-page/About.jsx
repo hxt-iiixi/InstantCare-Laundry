@@ -1,24 +1,24 @@
 import { useState } from "react";
-import Navbar from "../components/Navbar";
+import Navbar from "../../components/Navbar";
 
-import heroGlass from "../assets/images/aboutBG.jpg";
-import churchFaded from "../assets/images/about2.jpg";
-import circleA from "../assets/icons/circle1.svg";
-import circleB from "../assets/icons/circle2.svg";
-import circleC from "../assets/icons/circle3.svg";
-import circleD from "../assets/icons/circle1.svg";
-import jesus from "../assets/icons/jesus.png";   
-import praying from "../assets/icons/praying.svg";      
-import iconVision from "../assets/icons/bible.svg";         
-import ArcWheelV5 from "../components/ArcWheelV5";
-import iconCommunity from "../assets/icons/community.svg";
-import iconGrowth from "../assets/icons/growth.svg";
-import iconService from "../assets/icons/service.svg";
-import iconIntegrity from "../assets/icons/integrity.svg";
-import ampowerLogo from "../assets/icons/ampower-ehite.png";
-import fbIcon from "../assets/icons/facebook-white.svg";
-import twIcon from "../assets/icons/twitter-white.svg";
-import igIcon from "../assets/icons/instagram-white.svg";
+import heroGlass from "../../assets/images/aboutBG.jpg";
+import churchFaded from "../../assets/images/about2.jpg";
+import circleA from "../../assets/icons/circle1.svg";
+import circleB from "../../assets/icons/circle2.svg";
+import circleC from "../../assets/icons/circle3.svg";
+import circleD from "../../assets/icons/circle1.svg";
+import jesus from "../../assets/icons/jesus.png";   
+import praying from "../../assets/icons/praying.svg";      
+import iconVision from "../../assets/icons/bible.svg";         
+import ArcWheelV5 from "../../components/ArcWheelV5";
+import iconCommunity from "../../assets/icons/community.svg";
+import iconGrowth from "../../assets/icons/growth.svg";
+import iconService from "../../assets/icons/service.svg";
+import iconIntegrity from "../../assets/icons/integrity.svg";
+import ampowerLogo from "../../assets/icons/ampower-ehite.png";
+import fbIcon from "../../assets/icons/facebook-white.svg";
+import twIcon from "../../assets/icons/twitter-white.svg";
+import igIcon from "../../assets/icons/instagram-white.svg";
 
 
 export default function About() {

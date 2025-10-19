@@ -15,9 +15,9 @@ export default function DevotionBanner() {
           src={BG}
           alt=""
           className="
-            absolute inset-0 h-[6200px] sm:h-[620px] lg:h-[680px] w-full
+            absolute inset-0 h-[6200px] sm:h-[620px] lg:h-[730px] w-full
             object-cover
-            object-[85%_center]   /* keep focus to the right so the hands show */
+            object-[85%_center]  
           "
           draggable="false"
           aria-hidden="true"

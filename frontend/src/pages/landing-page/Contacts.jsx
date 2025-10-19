@@ -1,7 +1,7 @@
 import React from "react";
 import { Phone, Mail, MapPin, Send } from "lucide-react";
-import Navbar from "../components/Navbar";
-import ChurchInfoFooter from "../components/Home-Page/ChurchInfoFooter";  
+import Navbar from "../../components/Navbar";
+import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter";  
 
 export default function Contact() {
   return (

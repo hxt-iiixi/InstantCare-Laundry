@@ -7,18 +7,18 @@ import SystemManagementPage from "./pages/Super-Admin/SystemManagementPage.jsx";
 import AccountControlPage from "./pages/Super-Admin/AccountControlPage.jsx";
 
 import UserRolesPage from "./pages/Super-Admin/UserRolesPage.jsx";
-import Home from './pages/Home.jsx';
+import Home from './pages/landing-page/Home.jsx';
 import ForgetPasswordPage from "./pages/auth/ForgetPasswordPage.jsx";
 import VerifyOTPPage from "./pages/auth/VerifyOTPPage.jsx";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage.jsx";
 import CreatePasswordPage from "./pages/auth/CreatePasswordPage.jsx";
 import { motion } from 'framer-motion';
-import About from "./pages/About.jsx";
+import About from "./pages/landing-page/About.jsx";
 import VerifyOTPRegistrationPage from "./pages/auth/VerifyOTPRegistrationPage";
 import ChurchAdminRegisterPage from "./pages/auth/ChurchAdminRegisterPage.jsx";
 import RoleSelectPage from "/src/pages/auth/RoleSelectPage.jsx";
 import Calendar from "./pages/church-admin/Calendar.jsx";
-import Contact from './pages/Contacts.jsx';
+import Contact from './pages/landing-page/Contacts.jsx';
 
 
 export default function App() {

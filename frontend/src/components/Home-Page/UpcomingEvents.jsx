@@ -36,7 +36,7 @@ const events = [
 
 export default function UpcomingEvents() {
   return (
-    <section className="relative bg-[#FBF7F3] overflow-hidden">
+    <section className="relative  overflow-hidden">
       {/* Book */}
       <div
         aria-hidden="true"
