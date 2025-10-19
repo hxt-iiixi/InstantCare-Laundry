@@ -20,6 +20,7 @@ import fbIcon from "../assets/icons/facebook-white.svg";
 import twIcon from "../assets/icons/twitter-white.svg";
 import igIcon from "../assets/icons/instagram-white.svg";
 
+
 export default function About() {
 
   const [leftIdx, setLeftIdx] = useState(1); // when offset=0, LEFT is index 1

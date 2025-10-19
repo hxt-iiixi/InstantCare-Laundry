@@ -18,6 +18,7 @@ import VerifyOTPRegistrationPage from "./pages/auth/VerifyOTPRegistrationPage";
 import ChurchAdminRegisterPage from "./pages/auth/ChurchAdminRegisterPage.jsx";
 import RoleSelectPage from "/src/pages/auth/RoleSelectPage.jsx";
 import Calendar from "./pages/church-admin/Calendar.jsx";
+import Contact from './pages/Contacts.jsx';
 
 
 export default function App() {
@@ -83,6 +84,7 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/about" element={<About />} />
       <Route path="/Calendar" element={<Calendar />} />
+      <Route path="/Contact" element={<Contact />} />
 
     </Routes>
   );
