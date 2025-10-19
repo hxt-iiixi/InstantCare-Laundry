@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import SideNav from "../../components/Super-admin/SideNav"; // Import SideNav component
 import TopNav from "../../components/Super-admin/TopNav"; // Import TopNav component
 import RightImg from "../../assets/images/jc.jpg";
-import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter";
+import Footer from "../../components/Home-Page/ChurchInfoFooter";
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -46,7 +46,7 @@ const DashboardPage = () => {
   if (error) return <div>{error}</div>;
 
   return (
-    <div className="flex min-h-screen bg-gray-50 pt-16">
+    <div className="flex min-h-screen bg-gray-50 pt-16 flex-col">
       <SideNav /> {/* Use the SideNav component */}
       <div className="flex-1 bg-white p-8 ml-64">
         <TopNav /> {/* Use the TopNav component */}
@@ -102,11 +102,11 @@ const DashboardPage = () => {
                <p className="text-sm text-left text-gray-700 font-semibold mt-4">Awaiting your approval</p>
             </div>
           </div>
-          <ChurchInfoFooter />
+           
         </div> 
        
       </div>
-       
+
     </div>
     
   );

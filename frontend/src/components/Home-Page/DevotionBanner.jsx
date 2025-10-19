@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-// Replace with your actual files
+
 const BG = "/src/assets/images/devotion-bg.jpg";    
 const ROSARY = "/src/assets/icons/rosary.png";       
 const SPARKS = "/src/assets/icons/sparks.svg";      

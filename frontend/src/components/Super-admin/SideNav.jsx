@@ -1,11 +1,11 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 // Custom Icons
-import dashboardIcon from "/src/assets/icons/dashboard.svg";  // Replace with your icon paths
-import accountIcon from "/src/assets/icons/account.svg";      // Replace with your icon paths
-import systemIcon from "/src/assets/icons/system.svg";        // Replace with your icon paths
-import userRolesIcon from "/src/assets/icons/user-roles.svg"; // Replace with your icon paths
+import dashboardIcon from "/src/assets/icons/dashboard.svg";
+import accountIcon from "/src/assets/icons/account.svg";
+import systemIcon from "/src/assets/icons/system.svg";
+import userRolesIcon from "/src/assets/icons/user-roles.svg";
 
 const SideNav = () => {
   return (
@@ -13,21 +13,57 @@ const SideNav = () => {
       <h2 className="text-xl font-semibold mb-8">Dashboard</h2>
       <nav>
         <ul>
-          <li className="mb-4 flex items-center">
-            <img src={dashboardIcon} alt="Dashboard" className="mr-3 w-6 h-6" /> {/* Custom Icon */}
-            <Link to="/" className="hover:text-gray-400">Dashboard Overview</Link>
+          <li className="mb-4">
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                isActive
+                  ? "flex items-center gap-3 p-2 bg-gray-200 text-orange-500 font-semibold rounded-md"
+                  : "flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md"
+              }
+            >
+              <img src={dashboardIcon} alt="Dashboard" className="w-6 h-6" />
+              Dashboard Overview
+            </NavLink>
           </li>
-          <li className="mb-4 flex items-center">
-            <img src={accountIcon} alt="Account Control" className="mr-3 w-6 h-6" /> {/* Custom Icon */}
-            <Link to="/account" className="hover:text-gray-400">Account Control</Link>
+          <li className="mb-4">
+            <NavLink
+              to="/account"
+              className={({ isActive }) =>
+                isActive
+                  ? "flex items-center gap-3 p-2 bg-gray-200 text-orange-500 font-semibold rounded-md"
+                  : "flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md"
+              }
+            >
+              <img src={accountIcon} alt="Account Control" className="w-6 h-6" />
+              Account Control
+            </NavLink>
           </li>
-          <li className="mb-4 flex items-center">
-            <img src={systemIcon} alt="System Management" className="mr-3 w-6 h-6" /> {/* Custom Icon */}
-            <Link to="/system-management" className="hover:text-gray-400">System Management</Link>
+          <li className="mb-4">
+            <NavLink
+              to="/SystemManagement"
+              className={({ isActive }) =>
+                isActive
+                  ? "flex items-center gap-3 p-2 bg-gray-200 text-orange-500 font-semibold rounded-md"
+                  : "flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md"
+              }
+            >
+              <img src={systemIcon} alt="System Management" className="w-6 h-6" />
+              System Management
+            </NavLink>
           </li>
-          <li className="flex items-center">
-            <img src={userRolesIcon} alt="User Roles" className="mr-3 w-6 h-6" /> {/* Custom Icon */}
-            <Link to="/user-roles" className="hover:text-gray-400">User Roles</Link>
+          <li className="mb-4">
+            <NavLink
+              to="/UserRoles"
+              className={({ isActive }) =>
+                isActive
+                  ? "flex items-center gap-3 p-2 bg-gray-200 text-orange-500 font-semibold rounded-md"
+                  : "flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md"
+              }
+            >
+              <img src={userRolesIcon} alt="User Roles" className="w-6 h-6" />
+              User Roles
+            </NavLink>
           </li>
         </ul>
       </nav>

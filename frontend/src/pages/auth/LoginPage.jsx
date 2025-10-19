@@ -204,7 +204,6 @@ const handleSubmit = async (e) => {
                   <div className="h-px flex-1 bg-gray-200" />
                 </div>
 
-                {/* Google login */}
                 <div className="w-full">
                  <GoogleLogin
                       onSuccess={async (res) => {

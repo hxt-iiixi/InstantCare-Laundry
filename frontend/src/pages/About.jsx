@@ -21,10 +21,10 @@ import twIcon from "../assets/icons/twitter-white.svg";
 import igIcon from "../assets/icons/instagram-white.svg";
 
 export default function About() {
-  // Track which absolute image index is currently in the LEFT (BIG) slot (0..3)
+
   const [leftIdx, setLeftIdx] = useState(1); // when offset=0, LEFT is index 1
 
-  // Dedicated copy for each circle (index-aligned with images)
+  
   const copies = [
     {
       title: "Rooted in Faith, Growing in Love",
@@ -87,7 +87,7 @@ export default function About() {
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 md:py-32 lg:py-40">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left copy (stacked cross-fade by leftIdx) */}
+            {/* Left copy  */}
             <div className="order-1 lg:order-1 relative">
               <div className="relative min-h-[240px]">
                 {copies.map((c, i) => (
@@ -108,7 +108,7 @@ export default function About() {
               </div>
             </div>
 
-            {/* Right column: hard-align to the container’s right edge */}
+            {/* Right column:*/}
             <div className="order-2 lg:order-2 lg:col-start-2 relative">
               <div className="ml-auto">
                 {/* Overhang beyond the container so the RIGHT circle is off-screen */}

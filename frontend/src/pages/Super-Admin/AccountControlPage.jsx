@@ -278,9 +278,7 @@ export default function AccountControlPage() {
         </main>
       </div>
 
-      <footer className="mt-8 border-t border-zinc-200 bg-white w-full ml-0 md:ml-64">
-        <Footer />
-      </footer>
+   
     </div>
   );
 }

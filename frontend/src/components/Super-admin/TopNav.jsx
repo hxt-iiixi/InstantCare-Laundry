@@ -1,7 +1,7 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
-const SEARCH = "/src/assets/icons/Search.svg"; 
+const SEARCH = "/src/assets/icons/Search.svg";
 import ampowerLogo from "/src/assets/icons/ampower.svg";
 import test from "/src/assets/images/jc.jpg";
 
@@ -19,10 +19,38 @@ const TopNav = () => {
 
       {/* Center - Navigation Links */}
       <div className="flex space-x-6">
-        <Link to="/" className="text-orange-500 hover:text-gray-400">Dashboard Overview</Link>
-        <Link to="/account" className="text-zinc-900 hover:text-gray-400">Account Control</Link>
-        <Link to="/system-management" className="text-zinc-900 hover:text-gray-400">System Management</Link>
-        <Link to="/user-roles" className="text-zinc-900 hover:text-gray-400">User Roles</Link>
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) =>
+            isActive ? "text-orange-500 font-semibold" : "text-zinc-900 hover:text-gray-400"
+          }
+        >
+          Dashboard Overview
+        </NavLink>
+        <NavLink
+          to="/account"
+          className={({ isActive }) =>
+            isActive ? "text-orange-500 font-semibold" : "text-zinc-900 hover:text-gray-400"
+          }
+        >
+          Account Control
+        </NavLink>
+        <NavLink
+          to="/SystemManagement"
+          className={({ isActive }) =>
+            isActive ? "text-orange-500 font-semibold" : "text-zinc-900 hover:text-gray-400"
+          }
+        >
+          System Management
+        </NavLink>
+        <NavLink
+          to="/UserRoles"
+          className={({ isActive }) =>
+            isActive ? "text-orange-500 font-semibold" : "text-zinc-900 hover:text-gray-400"
+          }
+        >
+          User Roles
+        </NavLink>
       </div>
 
       {/* Right side - Search Bar, Button, Profile */}
@@ -32,20 +60,20 @@ const TopNav = () => {
           <input
             type="text"
             placeholder="Search..."
-            className="bg-transparent text-black focus:outline-none w-48 pl-2" 
+            className="bg-transparent text-black focus:outline-none w-48 pl-2"
           />
         </div>
 
         {/* Search Button */}
         <button className="bg-gray-200 p-2 rounded-md hover:bg-gray-300">
-          <img src={SEARCH} alt="Search Icon" className="h-5 w-5" /> 
+          <img src={SEARCH} alt="Search Icon" className="h-5 w-5" />
         </button>
 
         {/* Profile Icon */}
         <div className="relative">
           <button>
             <img
-              src={test} 
+              src={test}
               alt="Profile"
               className="w-10 h-10 rounded-full"
             />
