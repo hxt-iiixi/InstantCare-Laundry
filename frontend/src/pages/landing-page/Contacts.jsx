@@ -4,23 +4,39 @@ import Navbar from "../../components/Navbar";
 import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter";  
 import BackgroundMusic from "../../components/BackgroundMusic";
 import GlobalLayout from "../../components/PersistentLayout";
+import imgkids from "../../assets/icons/jesus with kids.png";
+
 export default function Contact() {
   return (
   <div className="min-h-screen bg-white font-sans text-gray-800">
       {/* Header Section */}
 
       <Navbar />
-      <header className="max-w-6xl px-1 py-10 text-left">
-      
-        <h1 className="text-5xl font-bold text-gray-900 ml-[230px]">Contact</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Get in touch with us for inquiries, support, or collaboration.
-          <br />
-          The AmPower team is committed to helping churches grow <br></br>through
-          digital innovation and faithful service.
-        </p>
-      </header>
+      <div className="max-w-6xl mx-auto px-1 py-10">
+  {/* 👇 This is the important flex container */}
+  <div className="flex items-center justify-between">
+    {/* LEFT — text */}
+    <header className="text-left max-w-2xl ml-[20%]">
+      <h1 className="text-5xl font-bold text-gray-900">Contact</h1>
+      <p className="text-gray-600 mt-4">
+        Get in touch with us for inquiries, support, or collaboration.
+        <br />
+        The AmPower team is committed to helping churches grow <br />
+        through digital innovation and faithful service.
+      </p>
+    </header>
 
+    {/* RIGHT — image */}
+    <img
+      src={imgkids}
+      alt="Kids"
+      width="400"
+      className="ml-10"
+    />
+    </div>
+    /</div>
+
+      
       {/* Main Content Section */}
       <section className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
         {/* Left Form */}

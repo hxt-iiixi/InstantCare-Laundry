@@ -274,11 +274,15 @@ export default function AccountControlPage() {
                 </table>
               </div>
             </div>
+            
           </section>
+          
         </main>
       </div>
+      
 
    
     </div>
+    
   );
 }
