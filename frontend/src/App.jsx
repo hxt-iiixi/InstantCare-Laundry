@@ -47,7 +47,7 @@ export default function App() {
       <Route path="/register" element={<RoleSelectPage />} />
       <Route path="/Calendar" element={<Calendar />} />
 
-      {/* Pages with Background Music - Wrapped in PersistentLayout */}
+     
       <Route path="/" element={<PersistentLayout><Home /></PersistentLayout>} />
       <Route path="/about" element={<PersistentLayout><About /></PersistentLayout>} />
       <Route path="/Contact" element={<PersistentLayout><Contact /></PersistentLayout>} />

@@ -11,7 +11,7 @@ import GlobalLayout from "../../components/PersistentLayout";
 export default function Home() {
   return (
     <>
-      <GlobalLayout> 
+
         <Navbar />
         <Hero />
         <FeatureCards />
@@ -20,8 +20,8 @@ export default function Home() {
         <UpcomingEvents />
         <LeadershipTeam />
         <ChurchInfoFooter />
-        <BackgroundMusic />
-      </GlobalLayout>
+
+
      
     </>
   );

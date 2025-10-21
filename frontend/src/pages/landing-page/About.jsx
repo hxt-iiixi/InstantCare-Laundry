@@ -51,7 +51,7 @@ export default function About() {
 
   return (
     <>
-      <GlobalLayout>
+
         <Navbar />
 
       {/* SECTION 1: Top hero */}
@@ -448,8 +448,8 @@ export default function About() {
         </div>
       </div>
     </footer>
-      <BackgroundMusic />          
-      </GlobalLayout>
+         
+  
       
     </>
   );

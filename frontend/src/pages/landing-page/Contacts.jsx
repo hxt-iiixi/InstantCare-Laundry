@@ -6,7 +6,7 @@ import BackgroundMusic from "../../components/BackgroundMusic";
 import GlobalLayout from "../../components/PersistentLayout";
 export default function Contact() {
   return (
-     <GlobalLayout><div className="min-h-screen bg-white font-sans text-gray-800">
+  <div className="min-h-screen bg-white font-sans text-gray-800">
       {/* Header Section */}
 
       <Navbar />
@@ -115,9 +115,9 @@ export default function Contact() {
         </div>
       </section>
         <ChurchInfoFooter />
-        <BackgroundMusic />
+
     </div>
-    </GlobalLayout>
+
     
   );
 }
