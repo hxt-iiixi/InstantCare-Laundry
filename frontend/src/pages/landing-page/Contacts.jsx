@@ -34,7 +34,7 @@ export default function Contact() {
       className="ml-10"
     />
     </div>
-    /</div>
+    </div>
 
       
       {/* Main Content Section */}
