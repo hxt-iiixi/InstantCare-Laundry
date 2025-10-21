@@ -1,3 +1,4 @@
+import { useDailyRandomVerse } from "../../lib/useDailyRandomVerse"
 import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -16,7 +17,6 @@ export default function DevotionBanner() {
   const prefersReduce = useReducedMotion();
   const sectionRef = useRef(null);
 
-  // Scroll parallax (kept subtle)
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"],
@@ -24,7 +24,6 @@ export default function DevotionBanner() {
   const bgY = useTransform(scrollYProgress, [0, 1], [0, -40]);
   const bgScale = useTransform(scrollYProgress, [0, 1], [1.04, 1.0]);
 
-  // Opening animations
   const word = {
     hidden: { opacity: 0, y: 18, rotateX: 12, filter: "blur(6px)" },
     show: { opacity: 1, y: 0, rotateX: 0, filter: "blur(0px)" },
@@ -39,7 +38,6 @@ export default function DevotionBanner() {
         transition: { duration: 2, repeat: Infinity, ease: "easeInOut" },
       };
 
-  // Rosary back to earlier simple pendulum + float (no mouse effect)
   const rosaryFloat = prefersReduce
     ? {}
     : { y: [0, -10, 0], transition: { duration: 7, repeat: Infinity, ease: "easeInOut" } };
@@ -48,11 +46,13 @@ export default function DevotionBanner() {
 
   const title = "Daily Devotion & Bible Verse".split(" ");
 
+  // ✅ Use the shared hook (reads the same localStorage key as Admin page)
+  const { text, reference, translation, loading, error } = useDailyRandomVerse();
+
   return (
     <MotionConfig reducedMotion={prefersReduce ? "always" : "never"}>
       <section ref={sectionRef} className="relative bg-[#FBF7F3]">
         <div className="relative mx-auto max-w-[100rem]">
-          {/* Background with gentle parallax */}
           <motion.img
             src={BG}
             alt=""
@@ -62,11 +62,9 @@ export default function DevotionBanner() {
             className="absolute inset-0 h-[620px] sm:h-[620px] lg:h-[730px] w-full object-cover object-[85%_center]"
           />
 
-          {/* Content */}
           <div className="relative z-10 mx-auto h-[560px] sm:h-[620px] lg:h-[680px] max-w-7xl px-4 sm:px-8">
             <div className="flex h-full items-center justify-start">
               <div className="relative text-center pl-2 sm:pl-8 lg:pl-24">
-                {/* Spark */}
                 <div className="relative inline-block">
                   <motion.img
                     src={SPARKS}
@@ -76,7 +74,6 @@ export default function DevotionBanner() {
                     animate={sparkAnim}
                   />
 
-                  {/* Headline with staggered reveal */}
                   <motion.h2
                     variants={container}
                     initial="hidden"
@@ -94,8 +91,6 @@ export default function DevotionBanner() {
                         {w}
                       </motion.span>
                     ))}
-
-                    {/* subtle underline entrance */}
                     {!prefersReduce && (
                       <motion.span
                         aria-hidden="true"
@@ -121,7 +116,7 @@ export default function DevotionBanner() {
                   transition={{ duration: 0.55, delay: 0.15 }}
                   className="mt-3 text-[15px] sm:text-[16px] text-neutral-800 max-w-xl"
                 >
-                  “Let love be genuine. Abhor what is evil; hold fast to what is good.”
+                  {loading ? "Loading verse..." : error ? "Could not load verse." : `“${text}”`}
                 </motion.p>
 
                 <motion.p
@@ -132,7 +127,7 @@ export default function DevotionBanner() {
                   transition={{ duration: 0.55, delay: 0.22 }}
                   className="text-[13px] sm:text-[14px] text-neutral-600"
                 >
-                  — Romans 12:9 (NKJV)
+                  {loading || error ? "" : `— ${reference} (${translation})`}
                 </motion.p>
 
                 <motion.div
@@ -154,17 +149,11 @@ export default function DevotionBanner() {
             </div>
           </div>
 
-          {/* Rosary — back to previous placement & simple motion */}
           <motion.img
             src={ROSARY}
             alt=""
             draggable="false"
-            className="
-              pointer-events-none absolute
-              left-[7%] sm:left-[9%]
-              top-[66%] sm:top-[64%] lg:top-[55%]
-              w-[190px] sm:w-[210px] lg:w-[300px]
-              select-none origin-top"
+            className="pointer-events-none absolute left-[7%] sm:left-[9%] top-[66%] sm:top-[64%] lg:top-[55%] w-[190px] sm:w-[210px] lg:w-[300px] select-none origin-top"
             animate={rosaryFloat}
             transition={rosarySwayTransition}
             style={rosarySway}

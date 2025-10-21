@@ -16,9 +16,12 @@ import VerifyOTPRegistrationPage from "./pages/auth/VerifyOTPRegistrationPage";
 import ChurchAdminRegisterPage from "./pages/auth/ChurchAdminRegisterPage.jsx";
 import RoleSelectPage from "/src/pages/auth/RoleSelectPage.jsx";
 import Calendar from "./pages/church-admin/Calendar.jsx";
+import ChurchDash from "./pages/church-admin/AdminDashboard.jsx";
+import DailyDevotion from "./pages/church-admin/DailyDevotion.jsx";
 import Contact from './pages/landing-page/Contacts.jsx';
+import PersistentLayout from "./components/PersistentLayout";  
 
-import PersistentLayout from "./components/PersistentLayout";  // Import the PersistentLayout component
+
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -45,7 +48,10 @@ export default function App() {
       <Route path="/verify-otp-registration" element={<VerifyOTPRegistrationPage />} />
       <Route path="/register/church-admin" element={<ChurchAdminRegisterPage />} />
       <Route path="/register" element={<RoleSelectPage />} />
-      <Route path="/Calendar" element={<Calendar />} />
+      <Route path="/parish-calendar" element={<Calendar />} />
+       <Route path="/church-dash" element={<ChurchDash />} />
+        <Route path="/daily-devotion" element={<DailyDevotion />} />
+      
 
      
       <Route path="/" element={<PersistentLayout><Home /></PersistentLayout>} />
