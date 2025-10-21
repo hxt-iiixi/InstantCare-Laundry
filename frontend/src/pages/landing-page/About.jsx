@@ -21,6 +21,8 @@ import twIcon from "../../assets/icons/twitter-white.svg";
 import igIcon from "../../assets/icons/instagram-white.svg";
 import BackgroundMusic from "../../components/BackgroundMusic";
 import GlobalLayout from "../../components/PersistentLayout";
+import LeadershipTeam from "../../components/Home-Page/LeadershipTeam";
+import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter";
 export default function About() {
 
   const [leftIdx, setLeftIdx] = useState(1); // when offset=0, LEFT is index 1
@@ -265,188 +267,12 @@ export default function About() {
       </section>
       {/* ===================== SECTION 5 ===================== */}
       <section className="relative bg-[#F8F4F2]">
-        {/* angled beige cap */}
-        <div
-          className="absolute -top-10 left-0 right-0 h-20 bg-[#F3EEEA] [clip-path:polygon(0_0,100%_0,100%_70%,0_100%)]"
-          aria-hidden
-        />
-
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 items-start">
-            {/* LEFT: heading + subhead */}
-            <div className="md:col-span-3">
-              <h2 className="text-[28px] md:text-[34px] font-extrabold leading-tight text-gray-900">
-                Meet Our
-                <span className="block">Leadership Team</span>
-              </h2>
-              <p className="mt-3 text-[15px] text-gray-600 max-w-[36ch]">
-                Dedicated servants guiding our church
-                with wisdom and care.
-              </p>
-            </div>
-
-            {/* RIGHT: five slim cards in one line */}
-            <div className="md:col-span-9">
-              <div className="flex flex-nowrap justify-between gap-4 sm:gap-5 overflow-x-auto md:overflow-visible">
-                {[
-                  {
-                    img: "https://i.pravatar.cc/160?img=12",
-                    name1: "Pastor",
-                    name2: "David Lee",
-                    role1: "Lead",
-                    role2: "Pastor",
-                  },
-                  {
-                    img: "https://i.pravatar.cc/160?img=32",
-                    name1: "Sarah",
-                    name2: "Chen",
-                    role1: "Youth",
-                    role2: "Director",
-                  },
-                  {
-                    img: "https://i.pravatar.cc/160?img=47",
-                    name1: "Emily",
-                    name2: "White",
-                    role1: "Community",
-                    role2: "Outreach Lead",
-                  },
-                  {
-                    img: "https://i.pravatar.cc/160?img=66",
-                    name1: "Mark",
-                    name2: "Johnson",
-                    role1: "Worship",
-                    role2: "Leader",
-                  },
-                  {
-                    img: "https://i.pravatar.cc/160?img=32",
-                    name1: "Sarah",
-                    name2: "Chen",
-                    role1: "Youth",
-                    role2: "Director",
-                  },
-                ].map((p, i) => (
-                  <div
-                    key={i}
-                    className="relative w-[148px] sm:w-[150px] shrink-0 rounded-xl bg-white ring-1 ring-gray-100 shadow-sm pt-9 pb-4 text-center"
-                  >
-                    {/* avatar overlap */}
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-                      <div className="h-14 w-14 rounded-full overflow-hidden ring-2 ring-white shadow">
-                        <img src={p.img} alt={`${p.name1} ${p.name2}`} className="h-full w-full object-cover" />
-                      </div>
-                    </div>
-
-                    {/* name (two lines, bold, tight) */}
-                    <div className="mt-2 px-3">
-                      <div className="text-[15px] font-semibold text-gray-900 leading-tight">
-                        {p.name1}
-                        <br />
-                        {p.name2}
-                      </div>
-
-                      {/* role (two lines, small gray) */}
-                      <div className="mt-2 text-[11px] text-gray-500 leading-tight">
-                        {p.role1}
-                        <br />
-                        {p.role2}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+       <LeadershipTeam />
       </section>
 
      {/* ===================== FOOTER ===================== */}
-    <footer className="relative bg-[#171615] text-gray-200">
-      {/* angled top cap */}
-      <div
-        aria-hidden
-        className="absolute -top-8 left-0 right-0 h-16 bg-[#171615] [clip-path:polygon(0_26%,96%_0,100%_100%,0_100%)]"
-      />
-
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-10 md:pt-14">
-        {/* row: logo + headline (LEFT-ALIGNED) */}
-        <div className="flex items-start gap-4">
-          <img src={ampowerLogo} alt="AmPower" className="h-7 w-auto md:h-8 shrink-0" />
-          <h3 className="font-serif font-extrabold text-white leading-tight text-[22px] md:text-[30px]">
-            <span className="whitespace-nowrap">Building stronger Churches</span>
-            <br />
-            <span className="whitespace-nowrap">for the next Generation.</span>
-          </h3>
-        </div>
-
-        {/* row: 2 content cols + follow col, with precise dividers */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 items-start">
-          {/* col 1 */}
-          <div className="md:col-span-4">
-            <p className="text-sm text-gray-300 max-w-prose">
-              We believe in the power of connection and shared faith. Come and be a part of our growing church family.
-            </p>
-            <div className="mt-5">
-              <p className="text-sm text-white font-semibold">Features:</p>
-              <p className="mt-1 text-sm text-gray-300 max-w-prose">
-                We believe in the power of connection and shared faith. Come and be a part of our growing church family.
-              </p>
-            </div>
-          </div>
-
-          {/* divider */}
-          <div className="hidden md:block md:col-span-1">
-            <div className="h-full border-l border-white/15" />
-          </div>
-
-          {/* col 2 */}
-          <div className="md:col-span-4">
-            <p className="text-sm text-gray-300 max-w-prose">
-              We believe in the power of connection and shared faith. Come and be a part of our growing church family.
-            </p>
-            <div className="mt-5">
-              <p className="text-sm text-white font-semibold">Support:</p>
-              <p className="mt-1 text-sm text-gray-300 max-w-prose">
-                We believe in the power of connection and shared faith. Come and be a part of our growing church family.
-              </p>
-            </div>
-          </div>
-
-          {/* divider */}
-          <div className="hidden md:block md:col-span-1">
-            <div className="h-full border-l border-white/15" />
-          </div>
-
-          {/* col 3: follow */}
-          <div className="md:col-span-2">
-            <p className="text-sm text-white font-semibold">Follow Us</p>
-            <div className="mt-2 flex items-center gap-4">
-              <a href="#" aria-label="Facebook" className="opacity-90 hover:opacity-100 transition">
-                <img src={fbIcon} alt="" className="h-4 w-4" />
-              </a>
-              <a href="#" aria-label="Twitter" className="opacity-90 hover:opacity-100 transition">
-                <img src={twIcon} alt="" className="h-4 w-4" />
-              </a>
-              <a href="#" aria-label="Instagram" className="opacity-90 hover:opacity-100 transition">
-                <img src={igIcon} alt="" className="h-4 w-4" />
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* bottom rule */}
-        <div className="mt-8 border-t border-white/10" />
-
-        {/* copyright row (centered) */}
-        <div className="py-6">
-          <p className="text-center text-[13px] text-gray-300">
-            © 2025 <span className="text-white">AmPower</span> •{" "}
-            <a href="#" className="hover:text-white">Home</a> •{" "}
-            <a href="#" className="hover:text-white">About</a> •{" "}
-            <a href="#" className="hover:text-white">Events</a> •{" "}
-            <a href="#" className="hover:text-white">Contact</a>
-          </p>
-        </div>
-      </div>
+    <footer className="relative  text-gray-200">
+       <ChurchInfoFooter />
     </footer>
          
   
