@@ -1,3 +1,4 @@
+// backend/controllers/authcontroller.js
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
@@ -50,6 +51,7 @@ const register = async (req, res) => {
   }
 };
 
+// backend/controllers/authcontroller.js
 const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -64,7 +66,7 @@ const login = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { _id: user._id, email: user.email },
+      { _id: user._id, email: user.email, role: user.role }, // Add role in JWT payload
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -72,11 +74,12 @@ const login = async (req, res) => {
     res.status(200).json({
       message: 'Login successful',
       token,
-      user: { name: user.name, email: user.email }
+      user: { name: user.name, email: user.email, role: user.role }  // Send the role
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 module.exports = { register, login };

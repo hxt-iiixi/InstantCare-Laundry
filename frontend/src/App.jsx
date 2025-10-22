@@ -1,5 +1,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import ProtectedRoute from "./routes/ProtectedRoute.jsx";
+import { getDefaultRouteByRole } from "./utils/auth.js";
+
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import DashboardPage from "./pages/Super-Admin/DashboardPage.jsx";
@@ -21,42 +24,67 @@ import DailyDevotion from "./pages/church-admin/DailyDevotion.jsx";
 import Contact from './pages/landing-page/Contacts.jsx';
 import PersistentLayout from "./components/PersistentLayout";  
 
-
+import Memberdash from "./pages/member-page/memberdash.jsx";
+import MemberProfile from "./pages/member-page/MemberProfile.jsx"; 
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [role, setRole] = useState(localStorage.getItem("role"));
 
   useEffect(() => {
-    const handleStorageChange = () => setToken(localStorage.getItem("token"));
+    const handleStorageChange = () => {
+      setToken(localStorage.getItem("token"));
+      setRole(localStorage.getItem("role"));
+    };
+    
     window.addEventListener("storage", handleStorageChange);
+
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // Whenever the token is updated, we check its status
+  useEffect(() => {
+    // If there's no token, the user is logged out, so we navigate to login
+    if (!token) {
+      setToken(localStorage.getItem("token"));
+    }
+  }, [token]);
+
   return (
     <Routes>
-      {/* Pages without Background Music */}
-      <Route path="/create-password" element={<CreatePasswordPage />} />
+      {/* Public auth */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register/member" element={<RegisterPage />} />
-      <Route path="/dashboard" element={token ? <DashboardPage /> : <Navigate to="/login" replace />} />
-      <Route path="/SystemManagement" element={token ? <SystemManagementPage /> : <Navigate to="/login" replace />} />
-      <Route path="/UserRoles" element={token ? <UserRolesPage /> : <Navigate to="/login" replace />} />
-      <Route path="/account" element={token ? <AccountControlPage /> : <Navigate to="/login" replace />} />
+      <Route path="/register/church-admin" element={<ChurchAdminRegisterPage />} />
+      <Route path="/register" element={<RoleSelectPage />} />
+      <Route path="/create-password" element={<CreatePasswordPage />} />
       <Route path="/forget-password" element={<ForgetPasswordPage />} />
       <Route path="/verify-otp" element={<VerifyOTPPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-otp-registration" element={<VerifyOTPRegistrationPage />} />
-      <Route path="/register/church-admin" element={<ChurchAdminRegisterPage />} />
-      <Route path="/register" element={<RoleSelectPage />} />
-      <Route path="/parish-calendar" element={<Calendar />} />
-       <Route path="/church-dash" element={<ChurchDash />} />
-        <Route path="/daily-devotion" element={<DailyDevotion />} />
-      
 
-     
+      {/* Public marketing pages */}
       <Route path="/" element={<PersistentLayout><Home /></PersistentLayout>} />
       <Route path="/about" element={<PersistentLayout><About /></PersistentLayout>} />
       <Route path="/Contact" element={<PersistentLayout><Contact /></PersistentLayout>} />
+
+      {/* Church-admin only */}
+      <Route path="/church-dash" element={ <ProtectedRoute roles={["church-admin"]} element={<ChurchDash />} /> } />
+      <Route path="/parish-calendar" element={ <ProtectedRoute roles={["church-admin"]} element={<Calendar />} /> } />
+      <Route path="/daily-devotion" element={ <ProtectedRoute roles={["church-admin"]} element={<DailyDevotion />} /> } />
+
+      {/* Member only */}
+      <Route path="/memberdash" element={ <ProtectedRoute roles={["member"]} element={<Memberdash />} /> } />
+      <Route path="/profile" element={ <ProtectedRoute roles={["member"]} element={<MemberProfile />} /> } />
+
+      {/* Super-admin */}
+      <Route path="/dashboard" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<DashboardPage />} /> } />
+      <Route path="/SystemManagement" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<SystemManagementPage />} /> } />
+      <Route path="/UserRoles" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<UserRolesPage />} /> } />
+      <Route path="/account" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<AccountControlPage />} /> } />
+
+      {/* Catch-all */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

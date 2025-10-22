@@ -154,6 +154,7 @@ app.post("/api/register", async (req, res) => {
 
 
 // Login
+// Login route
 app.post("/api/login", async (req, res) => {
   const rawEmail = req.body.email || "";
   const { password } = req.body;
@@ -161,37 +162,51 @@ app.post("/api/login", async (req, res) => {
   try {
     const email = rawEmail.toLowerCase().trim();
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    if (user.role !== "superadmin" && !user.isVerified) {
-      return res.status(403).json({ message: "Please verify your email before logging in." });
-    }
+    // (optional) block pending church-admins
+    await ensureChurchAdminApproved(user).catch((e) => { throw e; });
+
     if (!user.password) {
       return res.status(400).json({
         message:
           'This account is linked to Google. Use "Continue with Google" or set a password via "Forgot Password".',
-      });c
+      });
     }
-    if (!user.isVerified) {
+    if (user.role !== "superadmin" && !user.isVerified) {
       return res.status(403).json({ message: "Please verify your email before logging in." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    return res.json({ token, user: { username: user.username, email: user.email } });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    // If the user is a church-admin, include the church name
+    const churchName = user.role === "church-admin" ? user.name : null;
+
+    return res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        name: user.name,  // Ensure name is included here
+        email: user.email,
+        role: user.role,  // Include role for role-based routing
+        isVerified: user.isVerified,
+        churchName: churchName,  // Include church name if church-admin
+      }
+    });
   } catch (error) {
+    if (error.code === "UNDER_REVIEW") {
+      return res.status(403).json({ message: error.message, code: error.code });
+    }
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
-
-
 });
+
 
 
 
@@ -359,7 +374,7 @@ app.post("/api/auth/google", async (req, res) => {
     const token = signToken(user);
     return res.json({
       token,
-      user: { username: user.username || user.name, email: user.email, name: user.name, avatar: user.avatar },
+      user: { username: user.username || user.name, email: user.email, name: user.name, avatar: user.avatar,   role: user.role,    },
       needsPassword: !user.password,
     });
   } catch (err) {

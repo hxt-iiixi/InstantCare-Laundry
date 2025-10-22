@@ -1,8 +1,9 @@
+// src/lib/useDailyRandomVerse.js
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "daily_random_verse_v1";
 
-// local (non-UTC) date so it doesn’t flip early
+// local date key so it stays the same all day
 function todayKey() {
   const d = new Date();
   const y = d.getFullYear();
@@ -18,20 +19,37 @@ function msUntilNextMidnight() {
   return next - now;
 }
 
-// Use ONE API/translation for both pages (WEB via bible-api.com)
-async function fetchRandomVerse() {
-  const url = "https://bible-api.com/data/web/random";
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Verse fetch failed: ${res.status}`);
+// Primary: bible-api.com (WEB). Fallback: OurManna (random verse)
+async function fetchRandomVersePrimary() {
+  const res = await fetch("https://bible-api.com/data/web/random");
+  if (!res.ok) throw new Error(`bible-api status ${res.status}`);
   const data = await res.json();
-
   const v = Array.isArray(data.verses) ? data.verses[0] : data;
   const text = (v?.text || "").trim();
   const reference = v?.book_name
     ? `${v.book_name} ${v.chapter}:${v.verse}`
     : v?.reference || "";
-
+  if (!text || !reference) throw new Error("bible-api missing fields");
   return { text, reference, translation: "WEB" };
+}
+
+async function fetchRandomVerseFallback() {
+  const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json&order=random");
+  if (!res.ok) throw new Error(`ourmanna status ${res.status}`);
+  const data = await res.json();
+  const text = (data?.verse?.details?.text || "").trim();
+  const ref = data?.verse?.details?.reference || "";
+  if (!text || !ref) throw new Error("ourmanna missing fields");
+  return { text, reference: ref, translation: "KJV/varies" };
+}
+
+async function fetchRandomVerse() {
+  try {
+    return await fetchRandomVersePrimary();
+  } catch (e) {
+    console.warn("[DailyVerse] primary failed, using fallback:", e);
+    return await fetchRandomVerseFallback();
+  }
 }
 
 export function useDailyRandomVerse() {
@@ -45,9 +63,9 @@ export function useDailyRandomVerse() {
 
   useEffect(() => {
     const key = todayKey();
-    const cachedRaw = localStorage.getItem(STORAGE_KEY);
 
-    // Use cache for today and DON'T fetch again
+    // Use cache if today’s verse already exists
+    const cachedRaw = localStorage.getItem(STORAGE_KEY);
     if (cachedRaw) {
       try {
         const cached = JSON.parse(cachedRaw);
@@ -59,11 +77,9 @@ export function useDailyRandomVerse() {
             loading: false,
             error: "",
           });
-          return; // important: prevents re-fetch on refresh/mount
+          return; // don’t fetch again
         }
-      } catch {
-        // fall through
-      }
+      } catch (_) {}
     }
 
     let cancelled = false;
@@ -72,18 +88,22 @@ export function useDailyRandomVerse() {
         setState((s) => ({ ...s, loading: true, error: "" }));
         const verse = await fetchRandomVerse();
         if (cancelled) return;
-
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ key, ...verse }));
         setState({ ...verse, loading: false, error: "" });
-      } catch {
+      } catch (e) {
+        console.error("[DailyVerse] fetch failed:", e);
         if (!cancelled) {
-          setState((s) => ({ ...s, loading: false, error: "Unable to load verse right now." }));
+          setState((s) => ({
+            ...s,
+            loading: false,
+            error: "Could not load verse. Check console/network.",
+          }));
         }
       }
     })();
 
     const t = setTimeout(() => {
-      localStorage.removeItem(STORAGE_KEY); // new day → new verse
+      localStorage.removeItem(STORAGE_KEY); // new day -> new verse
     }, msUntilNextMidnight());
 
     return () => {

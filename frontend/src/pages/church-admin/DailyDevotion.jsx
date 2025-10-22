@@ -2,7 +2,7 @@ import React from "react";
 import AdminSidebar from "../../components/church-admin/AdminSidebar";
 import AdminHeader from "../../components/church-admin/AdminHeader";
 import { useDailyRandomVerse } from "../../lib/useDailyRandomVerse"
-
+import { useReflectionPromptsAdmin } from "../../lib/reflectionPrompts";
 const Icon = ({ file, className = "h-4 w-4", alt = "" }) => (
   <img src={`/src/assets/icons/${file}.svg`} alt={alt || file} className={className} draggable="false" />
 );
@@ -13,7 +13,9 @@ const Img = ({ file, className = "w-full h-full object-cover", alt = "" }) => (
 
 export default function DailyDevotion() {
   const { text, reference, translation, loading, error } = useDailyRandomVerse();
-
+  const {
+  items, add, remove, update, save, discard, dirty,
+} = useReflectionPromptsAdmin();
   return (
     <div className="min-h-screen bg-[#FBF7F3]">
       <AdminSidebar />
@@ -48,24 +50,64 @@ export default function DailyDevotion() {
           </section>
 
           {/* Reflection Prompts */}
-          <section className="mt-7 rounded-xl border border-slate-200 bg-white shadow-sm p-5 md:p-6 relative">
-            <button type="button" className="absolute right-3 top-3 h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200" aria-label="Edit prompts">
-              <Icon file="edit" className="h-4 w-4 opacity-80" />
-            </button>
-
+         <section className="mt-7 rounded-xl border border-slate-200 bg-white shadow-sm p-5 md:p-6 relative">
             <h3 className="text-lg md:text-xl font-semibold text-slate-900">Reflection Prompts</h3>
             <p className="text-sm text-slate-500 mt-1">Take a moment to reflect on today&apos;s message.</p>
 
-            <div className="mt-4 space-y-4">
-              <Prompt n={1} q="How does Philippians 4:13 resonate with your current life challenges?" />
-              <Prompt n={2} q="What specific areas of your life do you need Christ’s strength today?" />
-              <Prompt n={3} q="How can you practically apply this verse to overcome a difficulty this week?" />
-              <Prompt n={4} q="Consider a time when you felt God’s strength. How can you carry that experience forward?" />
-            </div>
+            {loading ? (
+              <div className="mt-4 text-slate-500">Loading…</div>
+            ) : (
+              <div className="mt-4 space-y-4">
+                {items.map((q, i) => (
+                  <div key={i} className="border rounded-md p-3">
+                    <label className="block text-[13px] text-slate-700 mb-2">
+                      <span className="font-medium">{i + 1}. </span> Prompt
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={q}
+                      onChange={(e) => update(i, e.target.value)}
+                      placeholder="Write your prompt..."
+                      className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-[14px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                    />
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => remove(i)}
+                        className="text-sm text-red-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={add}
+                  className="rounded-md bg-slate-100 px-4 py-2 text-sm hover:bg-slate-200"
+                >
+                  + Add prompt
+                </button>
+              </div>
+            )}
 
             <div className="mt-5 flex items-center gap-3">
-              <button className="rounded-md bg-[#D33131] text-white px-4 py-2 text-sm hover:opacity-95">Discard</button>
-              <button className="rounded-md bg-[#20A04C] text-white px-4 py-2 text-sm hover:opacity-95">Save changes</button>
+              <button
+                onClick={discard}
+                className="rounded-md bg-[#D33131] text-white px-4 py-2 text-sm hover:opacity-95 disabled:opacity-60"
+                disabled={!dirty}
+              >
+                Discard
+              </button>
+              <button
+                onClick={save}
+                className="rounded-md bg-[#20A04C] text-white px-4 py-2 text-sm hover:opacity-95 disabled:opacity-60"
+                disabled={!dirty}
+              >
+                Save changes
+              </button>
+              {!dirty && <span className="text-xs text-slate-500">All changes saved for today.</span>}
             </div>
           </section>
 

@@ -4,6 +4,21 @@ const itemBase =
   "flex items-center gap-3 w-full rounded-lg px-3 py-2 text-[15px] transition";
 const idle = "text-slate-600 hover:text-orange-600 hover:bg-orange-50";
 const active = "bg-orange-100 text-orange-700 font-semibold";
+const churchName = localStorage.getItem("churchName") || "St Joseph Parish";
+const handleLogout = () => {
+  // Clear localStorage
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("name");
+  localStorage.removeItem("avatar");
+  localStorage.removeItem("churchName");
+
+  // Show toast and redirect to login page
+  toast.success("You have logged out.");
+  navigate("/login", { replace: true });  
+
+ 
+};
 
 export default function AdminSidebar() {
   return (
@@ -101,8 +116,11 @@ export default function AdminSidebar() {
           Settings
         </Link>
 
-        <button className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-[#D33131] text-[#FFFFFF] hover:bg-red-100 py-2 text-[15px]">
-             <img
+       <button
+          onClick={handleLogout} // Call logout function on button click
+          className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-[#D33131] text-[#FFFFFF] hover:bg-red-100 py-2 text-[15px]"
+        >
+          <img
             src="/src/assets/icons/logout.svg"
             alt="AmPower"
             className="h-[20px] w-[20px]"
