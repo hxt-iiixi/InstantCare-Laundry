@@ -3,11 +3,11 @@ import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import PANEL_BG from "/src/assets/images/Rectangle 31.png";
 
 const people = [
-  { photo: "/src/assets/images/people/pastor.png", lines: ["Pastor","David","Lee"], role: ["Lead","Pastor"] },
-  { photo: "/src/assets/images/people/sarah.png",  lines: ["Sarah","Chen"],       role: ["Youth","Director"] },
-  { photo: "/src/assets/images/people/emily.png",  lines: ["Emily","White"],      role: ["Community","Outreach Lead"] },
-  { photo: "/src/assets/images/people/mark.png",   lines: ["Mark","John","son"],  role: ["Worship","Leader"] },
-  { photo: "/src/assets/images/people/sarah2.png", lines: ["Sarah","Chen"],       role: ["Youth","Director"] },
+  { photo: "/src/assets/images/people/pastor.png", lines: ["John","Christopher","Raguindin"], role: ["Project","Manager"] },
+  { photo: "/src/assets/images/people/sarah.png",  lines: ["Ken","Camagay"],       role: ["Full-stack","Developer"] },
+  { photo: "/src/assets/images/people/emily.png",  lines: ["Daniel","Cariaso"],      role: ["Database","Manager"] },
+  { photo: "/src/assets/images/people/mark.png",   lines: ["Charls","Dar"],  role: ["Frontend","Developer"] },
+  { photo: "/src/assets/images/people/sarah2.png", lines: ["April","Bravo"],       role: ["UI/UX","Designer"] },
 ];
 
 export default function LeadershipTeam() {

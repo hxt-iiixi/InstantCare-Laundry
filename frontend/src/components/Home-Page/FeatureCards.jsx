@@ -8,9 +8,7 @@ const items = [
   { title: "Church Calendar", desc: "Stay updated with upcoming services, events, and special gatherings in our church family.", icon: "/src/assets/icons/feature-calendar-1.svg", to: "/calendar" },
   { title: "Daily Devotion", desc: "Read short, inspiring messages from God’s Word to strengthen your faith each day.", icon: "/src/assets/icons/feature-devotion.svg", to: "/devotion" },
   { title: "Ministries Activities", desc: "Discover ongoing programs, outreach, and fellowship opportunities where you can serve and grow.", icon: "/src/assets/icons/feature-ministries.svg", to: "/ministries" },
-  { title: "Spiritual Journal", desc: "Reflect and record your prayers, blessings, and personal journey with God.", icon: "/src/assets/icons/feature-journal-1.svg", to: "/journal" },
-  { title: "Spiritual Journal", desc: "Reflect and record your prayers, blessings, and personal journey with God.", icon: "/src/assets/icons/feature-journal-1.svg", to: "/journal" },
-  { title: "Church Calendar", desc: "Stay updated with upcoming services, events, and special gatherings in our church family.", icon: "/src/assets/icons/feature-calendar-1.svg", to: "/calendar" },
+ 
 ];
 
 export default function FeatureCards() {
