@@ -154,9 +154,10 @@ export default function DevotionBanner() {
             alt=""
             draggable="false"
             className="pointer-events-none absolute left-[7%] sm:left-[9%] top-[66%] sm:top-[64%] lg:top-[55%] w-[190px] sm:w-[210px] lg:w-[300px] select-none origin-top"
-            animate={rosaryFloat}
-            transition={rosarySwayTransition}
-            style={rosarySway}
+            style={{ willChange: "transform" }}
+              animate={{ y: [0, -20, 0], rotate: [0, 2, -2, 0] }}
+              transition={{ y: { duration: 3, repeat: Infinity, ease: "easeInOut" }, rotate: { duration: 16, repeat: Infinity, ease: "easeInOut" } }}
+          
           />
         </div>
       </section>

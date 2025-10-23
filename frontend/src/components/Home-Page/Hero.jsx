@@ -46,8 +46,8 @@ export default function Hero() {
                 left-[-120px] sm:left-[-100px] lg:left-[-58px] xl:left-[-190px] 2xl:left-[-220px]
                 h-56 sm:h-64 lg:h-72 xl:h-80 w-auto sm:scale-100 scale-[0.92]"
               style={{ willChange: "transform" }}
-              animate={{ y: [0, -10, 0], rotate: [0, 2, -2, 0] }}
-              transition={{ y: { duration: 8, repeat: Infinity, ease: "easeInOut" }, rotate: { duration: 16, repeat: Infinity, ease: "easeInOut" } }}
+              animate={{ y: [0, -20, 0], rotate: [0, 2, -2, 0] }}
+              transition={{ y: { duration: 3, repeat: Infinity, ease: "easeInOut" }, rotate: { duration: 16, repeat: Infinity, ease: "easeInOut" } }}
             />
             <motion.div variants={container} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.4 }}>
               <h1 className="text-4xl leading-[1.05] sm:text-5xl lg:text-[52px] font-black tracking-tight text-black">
@@ -89,8 +89,8 @@ export default function Hero() {
         aria-hidden="true"
         className="pointer-events-none select-none absolute z-20 transform-gpu w-[520px] max-w-[78vw] h-auto left-[28%] sm:left-[30%] lg:left-[32%] bottom-0 sm:bottom-2 lg:bottom-4"
         style={{ willChange: "transform" }}
-        animate={{ y: [0, -8, 0], rotate: [0, -0.6, 0] }}
-        transition={{ y: { duration: 9, repeat: Infinity, ease: "easeInOut" }, rotate: { duration: 9, repeat: Infinity, ease: "easeInOut" } }}
+        animate={{ y: [0, -8, 0], rotate: [0, -0.6, 7] }}
+        transition={{ y: { duration: 5, repeat: Infinity, ease: "easeInOut" }, rotate: { duration: 9, repeat: Infinity, ease: "easeInOut" } }}
       />
     </section>
   );
