@@ -50,6 +50,7 @@ export default function NavbarAndHero() {
     { to: "/events", label: "Events" },
     { to: "/contact", label: "Contact" },
     { to: "/calendar", label: "Calendar" },
+    { to: "/church", label: "My Church" },
   ];
 
   const handleLogout = () => {
