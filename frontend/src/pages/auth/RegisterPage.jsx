@@ -26,25 +26,27 @@ const RegisterPage = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-
+  const [churchCode, setChurchCode] = useState("");
+  
 const handleSubmit = async (e) => {
   e.preventDefault();
-  console.log("Submitting form..."); // Check if the form is being submitted
+  setError("");
+
   if (password !== confirmPassword) {
     setError("Passwords do not match");
     return;
   }
+
   try {
-    const response = await axios.post("http://localhost:4000/api/register", {
+    await axios.post("http://localhost:4000/api/register", {
       username,
       email,
       password,
+      churchCode, // REQUIRED now
     });
-    console.log(response.data); // Check the response from the backend
-    localStorage.setItem("token", response.data.token);
-   navigate("/verify-otp-registration", { state: { email, role: "member" } });
+    navigate("/verify-otp-registration", { state: { email, role: "member" } });
   } catch (err) {
-    setError(err.response?.data?.message || "Something went wrong!");
+    setError(err?.response?.data?.message || "Something went wrong!");
   }
 };
 
@@ -202,6 +204,24 @@ const handleVerify = async () => {
                     </div>
                   </label>
 
+                  <label className="block">
+                    <span className="block text-xs font-medium text-gray-600 mb-1">
+                      Church Join Code
+                    </span>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="e.g., 7GQ4KZ"
+                        value={churchCode}
+                        onChange={(e) => setChurchCode(e.target.value.toUpperCase())}
+                        required
+                        className="w-full rounded-md border border-gray-300 pl-3 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C52] focus:border-transparent tracking-widest uppercase"
+                      />
+                    </div>
+                    <span className="text-[11px] text-gray-500">
+                      Ask your church admin for this 6-character code.
+                    </span>
+                  </label>
                  
                   {error && (
                     <p className="text-red-500 text-center text-sm">{error}</p>

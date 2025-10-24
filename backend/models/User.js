@@ -26,6 +26,8 @@ const userSchema = new mongoose.Schema(
     // OTP (registration) 
     regOTP: String,
     regOTPExpiry: Date,
+
+    churchRef: { type: mongoose.Schema.Types.ObjectId, ref: "ChurchApplication", index: true },
   },
   { timestamps: true }
 );

@@ -12,7 +12,7 @@ import {
 } from "../controllers/churchAdminController.js";
 import auth from "../middleware/auth.js";
 import isAdmin from "../middleware/isAdmin.js";
-
+import { generateJoinCode, getChurchStats, getMyChurchApplication } from "../controllers/churchAdminController.js";
 const router = express.Router();
 router.get("/ping", (_req, res) => res.json({ ok: true, at: "/api/church-admin/ping" }));
 
@@ -38,5 +38,10 @@ router.get("/applications", auth, isAdmin, listApplications);
 router.get("/applications/:id", auth, isAdmin, getApplication);
 router.patch("/applications/:id/approve", auth, isAdmin, approveApplication);
 router.patch("/applications/:id/reject", auth, isAdmin, rejectApplication);
+// church admin (or admin/superadmin) can generate a join code
+router.post("/applications/:id/join-code", auth, generateJoinCode);
 
+// dashboard KPI: join code + total parishioners
+router.get("/applications/:id/stats", auth, getChurchStats);
+router.get("/mine", auth, getMyChurchApplication);    
 export default router;

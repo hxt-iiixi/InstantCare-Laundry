@@ -16,8 +16,7 @@ export const registerChurchAdmin = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-
-  
+      
     const existingApp = await ChurchApplication.findOne({
       email: normalizedEmail,
       status: { $in: ["pending", "approved"] },
@@ -144,4 +143,82 @@ export const rejectApplication = async (req, res) => {
   app.reviewedBy = req.user?._id;
   await app.save();
   res.json({ message: "Rejected" });
+};
+function canManageChurch(req, appDoc) {
+  if (!appDoc) return false;
+  const isAdmin = ["admin", "superadmin"].includes(req.user?.role);
+  const isOwner =
+    req.user?.role === "church-admin" &&
+    req.user?.email?.toLowerCase() === appDoc.email?.toLowerCase();
+  return isAdmin || isOwner;
+}
+
+export const generateJoinCode = async (req, res) => {
+  const app = await ChurchApplication.findById(req.params.id);
+  if (!app) return res.status(404).json({ message: "Not found" });
+  if (app.status !== "approved") {
+    return res.status(400).json({ message: "Church must be approved first." });
+  }
+  if (!canManageChurch(req, app)) {
+    return res.status(403).json({ message: "Not allowed." });
+  }
+
+  // ✅ If a code already exists, DO NOT change it. Return the same code every time.
+  if (app.joinCode) {
+    return res.json({
+      joinCode: app.joinCode,
+      generatedAt: app.joinCodeGeneratedAt,
+      alreadyExists: true,
+    });
+  }
+
+  // Otherwise generate once
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/0/I/1
+  const makeCode = () =>
+    Array.from({ length: 6 }, () => alphabet[crypto.randomInt(alphabet.length)]).join("");
+
+  let code = null;
+  for (let i = 0; i < 5; i++) {
+    const tryCode = makeCode();
+    const clash = await ChurchApplication.findOne({ joinCode: tryCode }).lean();
+    if (!clash) { code = tryCode; break; }
+  }
+  if (!code) return res.status(500).json({ message: "Failed to generate code. Try again." });
+
+  app.joinCode = code;
+  app.joinCodeGeneratedAt = new Date();
+  await app.save();
+
+  res.json({ joinCode: app.joinCode, generatedAt: app.joinCodeGeneratedAt, alreadyExists: false });
+};
+
+export const getChurchStats = async (req, res) => {
+  const app = await ChurchApplication.findById(req.params.id);
+  if (!app) return res.status(404).json({ message: "Not found" });
+  if (!canManageChurch(req, app)) {
+    return res.status(403).json({ message: "Not allowed." });
+  }
+
+  const totalParishioners = await User.countDocuments({
+    churchRef: app._id,
+    role: "member",
+    isVerified: true, // count verified members only
+  });
+
+  res.json({
+    churchName: app.churchName,
+    joinCode: app.joinCode || null,
+    totalParishioners,
+  });
+};
+
+export const getMyChurchApplication = async (req, res) => {
+  // church-admin’s email == ChurchApplication.email (your flow)
+  const email = req.user?.email?.toLowerCase();
+  if (!email) return res.status(401).json({ message: "Unauthorized" });
+
+  const app = await ChurchApplication.findOne({ email }).lean();
+  if (!app) return res.status(404).json({ message: "No application found for this account." });
+
+  res.json({ id: app._id, churchName: app.churchName, status: app.status, joinCode: app.joinCode || null });
 };

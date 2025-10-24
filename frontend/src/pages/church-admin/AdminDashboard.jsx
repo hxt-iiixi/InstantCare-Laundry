@@ -1,6 +1,9 @@
 // src/pages/church-admin/AdminDashboard.jsx
 import AdminSidebar from "../../components/church-admin/AdminSidebar";
 import AdminHeader from "../../components/church-admin/AdminHeader";
+import { useEffect, useState } from "react";
+import axios from "axios";
+
 
 const Icon = ({ file, className = "h-4 w-4", alt = "" }) => (
   <img
@@ -21,25 +24,71 @@ function LegendDot({ color, label }) {
 }
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState({ churchName: "", joinCode: null, totalParishioners: 0 });
+  const [churchAppId, setChurchAppId] = useState(localStorage.getItem("churchAppId") || null);
+  const api = axios.create({
+    baseURL: "http://localhost:4000",
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+
+  const ensureChurchId = async () => {
+    if (churchAppId) return churchAppId;
+    const { data } = await api.get("/api/church-admin/mine");
+    localStorage.setItem("churchAppId", data.id);
+    setChurchAppId(data.id);
+    return data.id;
+  };
+
+  const loadStats = async () => {
+    const id = await ensureChurchId();
+    const { data } = await api.get(`/api/church-admin/applications/${id}/stats`);
+    setStats(data);
+  };
+
+const handleGenerateCode = async () => {
+  if (stats.joinCode) return; // guard in UI + here
+  const id = await ensureChurchId();
+  await api.post(`/api/church-admin/applications/${id}/join-code`);
+  await loadStats();
+};
+
+  useEffect(() => { loadStats(); }, []); // load on mount
+
+  const Header = (
+    <div className="flex items-center justify-between">
+      <h2 className="text-2xl font-semibold text-slate-900">
+        Welcome, <span className="font-semibold">{stats.churchName || "Your Parish"}</span>!
+      </h2>
+      <div className="flex items-center gap-3">
+        {stats.joinCode && (
+          <span className="rounded-md bg-white border border-slate-200 px-3 py-2 text-sm font-semibold tracking-widest">
+            Code: <span className="text-orange-600">{stats.joinCode}</span>
+          </span>
+        )}
+       <button
+          onClick={stats.joinCode ? undefined : handleGenerateCode}
+          disabled={Boolean(stats.joinCode)}
+          className={`inline-flex items-center gap-2 rounded-md text-white text-sm font-medium px-3.5 py-2 shadow-sm
+            ${stats.joinCode
+              ? "bg-slate-300 cursor-not-allowed"
+              : "bg-orange-500 hover:bg-orange-600"}`}
+          title={stats.joinCode ? "A code has already been generated for this church." : "Generate a join code"}
+        >
+          <Icon file={stats.joinCode ? "check" : "plus"} className="h-4 w-4" />
+          {stats.joinCode ? "Code Generated" : "Generate Code"}
+        </button>
+
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#FBF7F3]">
       <AdminSidebar />
-      {/* Full-width fixed header */}
       <AdminHeader className="pl-[232px]" title="Admin Dashboard" />
-
-      {/* Content offset for sidebar & header */}
       <main className="pl-[232px] pt-[64px]">
         <div className="max-w-7xl mx-auto w-full px-6 py-6">
-          {/* Top row: welcome + button */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-slate-900">
-              Welcome, <span className="font-semibold">St. Joseph Parish</span>!
-            </h2>
-
-            <button className="inline-flex items-center gap-2 rounded-md bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-3.5 py-2 shadow-sm">
-              <Icon file="plus" className="h-4 w-4" /> Generate Code
-            </button>
-          </div>
+          {Header}
 
           {/* KPI cards */}
           <div className="mt-5 grid grid-cols-12 gap-5">
@@ -49,7 +98,9 @@ export default function AdminDashboard() {
                   <div className="text-sm text-slate-600">Total Parishioners</div>
                   <Icon file="kpi-dots" className="h-4 w-4 opacity-60" />
                 </div>
-                <div className="mt-2 text-2xl font-semibold text-orange-500">0</div>
+                <div className="mt-2 text-2xl font-semibold text-orange-500">
+                  {stats.totalParishioners ?? 0}
+                </div>
               </div>
             </div>
 

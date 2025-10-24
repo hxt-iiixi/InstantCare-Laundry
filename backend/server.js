@@ -123,13 +123,23 @@ app.post("/api/orders", auth, async (req, res) => {
 
 app.post("/api/register", async (req, res) => {
   try {
-    const { username, email: rawEmail, password } = req.body;
+    const { username, email: rawEmail, password, churchCode } = req.body;
     const email = (rawEmail || "").toLowerCase().trim();
 
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: "Email already in use" });
 
     const hash = await bcrypt.hash(password, 12);
+
+    let churchRef = null;
+    if (churchCode && churchCode.trim()) {
+      const appDoc = await ChurchApplication.findOne({
+        joinCode: churchCode.trim().toUpperCase(),
+        status: "approved",
+      }).lean();
+      if (!appDoc) return res.status(400).json({ message: "Invalid church code." });
+      churchRef = appDoc._id;
+    }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = new Date(Date.now() + 10 * 60 * 1000);
@@ -138,10 +148,11 @@ app.post("/api/register", async (req, res) => {
       username,
       email,
       password: hash,
-      isVerified: false,
       role: "member",
+      isVerified: false,
       regOTP: otp,
       regOTPExpiry: expiry,
+      churchRef, // <- link to the church
     });
 
     await sendOTPEmail(email, `Your AmPower verification code is: ${otp}`);
@@ -454,5 +465,31 @@ app.post("/api/auth/google/login", async (req, res) => {
     return res.status(401).json({ message: "Google sign-in failed." });
   }
 });
+
+// Member: get my joined church info (used by MemberDash)
+app.get("/api/members/me/church", auth, async (req, res) => {
+  try {
+    const u = await User.findById(req.user._id).lean();
+    if (!u?.churchRef) return res.json({ church: null });
+
+    const appDoc = await ChurchApplication.findById(u.churchRef).lean();
+    if (!appDoc) return res.json({ church: null });
+
+    res.json({
+      church: {
+        id: String(appDoc._id),
+        name: appDoc.churchName,
+        joinCode: appDoc.joinCode || null,
+        status: appDoc.status,
+      },
+    });
+  } catch (e) {
+    console.error("GET /api/members/me/church error:", e.message);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
 
 start();
