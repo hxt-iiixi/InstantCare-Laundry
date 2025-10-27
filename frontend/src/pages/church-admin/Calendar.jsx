@@ -1,17 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import dayjs from 'dayjs';
-import axios from 'axios'; 
+import axios from 'axios';
 import AdminSidebar from "../../components/church-admin/AdminSidebar";
 import AdminHeader from "../../components/church-admin/AdminHeader";
 
-// Sample events data, this will be managed in state
-let EVENTS = [
-  { date: "2025-10-23", title: "Sunday Worship", time: "10:00 AM - 11:30 AM", location: "Main Sanctuary", description: "Join us for our weekly Sunday worship service." },
-  { date: "2025-10-24", title: "Bible Study", time: "2:00 PM - 3:30 PM", location: "Library", description: "Bible study session with Pastor Michael." },
-];
 
-const badge = "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium";
-
+axios.defaults.baseURL = "http://localhost:4000";
 function EventPill({ title, muted }) {
   return (
     <span
@@ -20,6 +14,7 @@ function EventPill({ title, muted }) {
           ? "bg-slate-100 text-slate-500 rounded px-2 py-0.5 text-[12px]"
           : "bg-orange-100 text-orange-700 rounded px-2 py-0.5 text-[12px]"
       }
+      title={title}
     >
       {title.length > 18 ? `${title.slice(0, 18)}…` : title}
     </span>
@@ -27,102 +22,117 @@ function EventPill({ title, muted }) {
 }
 
 export default function ParishCalendar() {
-  const [events, setEvents] = useState(EVENTS); // Manage events in state
-  const [selected, setSelected] = useState(null); // Track selected event
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null); // for the details pane
+  const [newDate, setNewDate] = useState(null);             // for the add-event modal
+
   const [showModal, setShowModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: "", time: "", location: "", description: "" });
-  const [editingEvent, setEditingEvent] = useState(null); // Track the event being edited
+  const [editingEvent, setEditingEvent] = useState(null);
   const [churchAppId, setChurchAppId] = useState(null);
-  const currentDate = dayjs();
-  const [viewMonth, setViewMonth] = useState(currentDate); // Start with the current month
 
+  const currentDate = dayjs();
+  const [viewMonth, setViewMonth] = useState(currentDate);
   const startOfMonth = viewMonth.startOf('month');
   const endOfMonth = viewMonth.endOf('month');
   const startGrid = startOfMonth.startOf('week');
-  
-  const days = Array.from({ length: 42 }).map((_, i) => startGrid.add(i, 'day')); // 6 rows, 7 columns
+  const days = Array.from({ length: 42 }).map((_, i) => startGrid.add(i, 'day'));
 
-  // Group events by date for easy rendering
   const byDate = useMemo(() => {
-  const map = new Map();
-  events.forEach((e) => {
-    map.set(e.date, (map.get(e.date) || []).concat(e));
-  });
-  return map;
-}, [events]); // Recalculate when events change
+    const map = new Map();
+    events.forEach((e) => {
+      const key = dayjs(e.date).format("YYYY-MM-DD");
+      map.set(key, (map.get(key) || []).concat(e));
+    });
+    return map;
+  }, [events]);
 
+  // 1) fetch church id for the logged-in admin
+  useEffect(() => {
+    (async () => {
+      try {
+        // include auth header if your /me/church route is protected
+        const token = localStorage.getItem("token");
+        const res = await axios.get("/api/church-admin/me/church", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        setChurchAppId(res.data?.church?.id || null);
+      } catch (e) {
+        console.error("fetch church id failed:", e);
+      }
+    })();
+  }, []);
 
-const handleSaveEvent = async () => {
-  const newEventWithDate = {
-    ...newEvent,
-    date: dayjs(selected).format("YYYY-MM-DD"),  // Ensure 'selected' is a valid date
-    churchRef: churchAppId, // Send the church reference
-  };
+  // 2) fetch events for that church
+  useEffect(() => {
+    (async () => {
+      if (!churchAppId) return;
+      try {
+        const res = await axios.get("/api/events", { params: { churchId: churchAppId } });
+        setEvents(res.data || []);
+      } catch (e) {
+        console.error("Error fetching events:", e);
+      }
+    })();
+  }, [churchAppId]);
 
-  try {
-    const response = await axios.post("/api/events", newEventWithDate);  // Change URL to relative
-    setEvents((prevEvents) => [...prevEvents, response.data]);  // Update state with new event
-    setShowModal(false);
-    setNewEvent({ title: "", time: "", location: "", description: "" });
-  } catch (error) {
-    console.error("Error saving event:", error);
-  }
-};
-
-
-
-
- const handleEditEvent = async () => {
-  const updatedEvent = { ...editingEvent, ...newEvent };
-
-  try {
-    const response = await axios.patch(`/api/events/${editingEvent._id}`, updatedEvent);
-    setEvents((prevEvents) => prevEvents.map((event) => (event._id === response.data._id ? response.data : event)));
-    setShowModal(false);
-    setEditingEvent(null);
-    setNewEvent({ title: "", time: "", location: "", description: "" });
-  } catch (error) {
-    console.error("Error editing event:", error);
-  }
-};
-
-
-const handleDeleteEvent = async () => {
-  try {
-    await axios.delete(`/api/events/${editingEvent._id}`);
-    setEvents((prevEvents) => prevEvents.filter((event) => event._id !== editingEvent._id));  // Remove the event from state
-    setShowModal(false);
-    setEditingEvent(null);
-  } catch (error) {
-    console.error("Error deleting event:", error);
-  }
-};
-
-
-  // When clicking on a date, show the event details if an event exists
-  const handleDateClick = (date) => {
-    const eventOnDate = byDate.get(date.format("YYYY-MM-DD"));
-    if (eventOnDate && eventOnDate.length > 0) {
-      setSelected(eventOnDate[0]); // Set selected event
-    } else {
-      setSelected(null);
-      setShowModal(true); // Show the modal if no event
-    }
-  };
-
-useEffect(() => {
-  const fetchEvents = async () => {
+  const handleSaveEvent = async () => {
+    if (!churchAppId) return; // guard
+    const payload = {
+      ...newEvent,
+      // store date as YYYY-MM-DD (server converts to Date)
+      date: newDate,
+      churchRef: churchAppId,
+    };
     try {
-      const response = await axios.get(`/api/events/${churchAppId}`);
-      setEvents(response.data);  // Update state with events from the backend
+      const { data } = await axios.post("/api/events", payload);
+      setEvents((prev) => [...prev, data]);
+       setSelectedEvent(data);
+      setShowModal(false);
+      setNewEvent({ title: "", time: "", location: "", description: "" });
     } catch (error) {
-      console.error("Error fetching events:", error);
+      console.error("Error saving event:", error?.response?.data || error);
     }
   };
 
-  if (churchAppId) fetchEvents();
-}, [churchAppId]);  // fetch events when churchAppId is set
+  const handleEditEvent = async () => {
+    try {
+      const { data } = await axios.patch(`/api/events/${editingEvent._id}`, newEvent);
+      setEvents((prev) => prev.map((e) => (e._id === data._id ? data : e)));
+      setSelectedEvent(se => (se && se._id === data._id ? data : se));
+      setShowModal(false);
+      setEditingEvent(null);
+      setNewEvent({ title: "", time: "", location: "", description: "" });
+    } catch (error) {
+      console.error("Error editing event:", error?.response?.data || error);
+    }
+  };
 
+const handleDeleteEvent = async (id) => {
+   const targetId = id || selectedEvent?._id || editingEvent?._id;
+   if (!targetId) return;
+   try {
+     await axios.delete(`/api/events/${targetId}`);
+     setEvents((prev) => prev.filter((e) => e._id !== targetId));
+     setSelectedEvent(se => (se && se._id === targetId ? null : se));
+     setSelectedEvent(null);
+     setEditingEvent(null);
+     setShowModal(false);
+   } catch (error) {
+     console.error("Error deleting event:", error?.response?.data || error);
+   }
+ };
+  const handleDateClick = (date) => {
+    const k = date.format("YYYY-MM-DD");
+    const evts = byDate.get(k);
+    if (evts?.length) {
+      setSelectedEvent(evts[0]);
+    } else {
+      setSelectedEvent(null);
+      setNewDate(k);     // keep the clicked date for the modal
+      setShowModal(true);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FBF7F3]">
@@ -166,7 +176,7 @@ useEffect(() => {
 
                     <div className="mt-2 space-y-1">
                      {evts.map((e, idx) => (
-                        <button key={idx} onClick={() => setSelected(e)} className="block text-left">
+                        <button key={idx} onClick={() => setSelectedEvent(e)} className="block text-left">
                           <EventPill title={e.title} muted={e.muted} />
                         </button>
                       ))}
@@ -182,16 +192,16 @@ useEffect(() => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
               <h3 className="text-lg font-semibold text-slate-800 mb-4">Event Details</h3>
 
-              {selected ? (
+              {selectedEvent  ? (
                 <div className="rounded-xl border border-slate-200 shadow-sm p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h4 className="text-[16px] font-semibold text-slate-800 truncate">
-                          {selected.title}
+                          {selectedEvent.title}
                         </h4>
                         <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 px-2 py-0.5 text-[11px]">
-                          {selected.tag || "Worship"}
+                          {setSelectedEvent.tag || "Worship"}
                         </span>
                       </div>
 
@@ -200,36 +210,36 @@ useEffect(() => {
                           <svg className="h-4 w-4 opacity-70" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M5 3h14v18H5z"></path>
                           </svg>
-                          <span className="truncate">{selected.time}</span>
+                          <span className="truncate">{selectedEvent.time}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <svg className="h-4 w-4 opacity-70" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M19 3H5v18h14z"></path>
                           </svg>
-                          <span className="truncate">{selected.location}</span>
+                          <span className="truncate">{selectedEvent.location}</span>
                         </div>
                       </div>
 
                       <p className="mt-3 text-[14px] leading-6 text-slate-700">
-                        {selected.description}
+                        {selectedEvent.description}
                       </p>
                     </div>
                   </div>
 
                   <div className="mt-4 space-y-3">
                     <button className="w-full rounded-lg bg-orange-500 hover:bg-orange-600 text-white py-2" onClick={() => {
-                      setEditingEvent(selected);
+                      setEditingEvent(selectedEvent);
                       setNewEvent({
-                        title: selected.title,
-                        time: selected.time,
-                        location: selected.location,
-                        description: selected.description
+                        title: selectedEvent.title,
+                        time: selectedEvent.time,
+                        location: selectedEvent.location,
+                        description: selectedEvent.description
                       });
                       setShowModal(true);
                     }}>
                       Edit Event
                     </button>
-                    <button className="w-full rounded-lg bg-white border border-red-100 text-red-600 hover:bg-red-50 py-2" onClick={handleDeleteEvent}>
+                    <button className="w-full rounded-lg bg-white border border-red-100 text-red-600 hover:bg-red-50 py-2" onClick={() => handleDeleteEvent(selectedEvent._id)}>
                       Delete Event
                     </button>
                   </div>

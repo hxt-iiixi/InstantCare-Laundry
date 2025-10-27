@@ -16,7 +16,7 @@ export const registerChurchAdmin = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-      
+      const tempPass = crypto.randomBytes(6).toString("hex");
     const existingApp = await ChurchApplication.findOne({
       email: normalizedEmail,
       status: { $in: ["pending", "approved"] },
@@ -80,7 +80,20 @@ export const registerChurchAdmin = async (req, res) => {
   }
 };
 
+export const getMyChurch = async (req, res) => {
+  try {
+    const email = (req.user?.email || "").toLowerCase();
+    if (!email) return res.status(401).json({ message: "Unauthorized" });
 
+    const appDoc = await ChurchApplication.findOne({ email }).lean();
+    if (!appDoc) return res.json({ church: null });
+
+    res.json({ church: { id: String(appDoc._id), name: appDoc.churchName } });
+  } catch (e) {
+    console.error("GET /me/church error:", e.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 export const listApplications = async (req, res) => {
   const { status } = req.query; 
@@ -222,3 +235,4 @@ export const getMyChurchApplication = async (req, res) => {
 
   res.json({ id: app._id, churchName: app.churchName, status: app.status, joinCode: app.joinCode || null });
 };
+

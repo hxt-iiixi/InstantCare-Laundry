@@ -4,15 +4,17 @@ import multer from "multer";
 import path from "path";
 import crypto from "crypto";
 import {
-  registerChurchAdmin,
+ registerChurchAdmin,
   listApplications,
   getApplication,
   approveApplication,
   rejectApplication,
+  getMyChurch, 
 } from "../controllers/churchAdminController.js";
 import auth from "../middleware/auth.js";
 import isAdmin from "../middleware/isAdmin.js";
 import { generateJoinCode, getChurchStats, getMyChurchApplication } from "../controllers/churchAdminController.js";
+import ChurchApplication from "../models/ChurchApplication.js";
 const router = express.Router();
 router.get("/ping", (_req, res) => res.json({ ok: true, at: "/api/church-admin/ping" }));
 
@@ -40,8 +42,15 @@ router.patch("/applications/:id/approve", auth, isAdmin, approveApplication);
 router.patch("/applications/:id/reject", auth, isAdmin, rejectApplication);
 // church admin (or admin/superadmin) can generate a join code
 router.post("/applications/:id/join-code", auth, generateJoinCode);
+router.get("/me/church", auth, getMyChurch);
 
 // dashboard KPI: join code + total parishioners
 router.get("/applications/:id/stats", auth, getChurchStats);
 router.get("/mine", auth, getMyChurchApplication);    
+
+
+
+
+
+
 export default router;
