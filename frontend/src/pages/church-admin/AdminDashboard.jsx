@@ -2,7 +2,7 @@
 import AdminSidebar from "../../components/church-admin/AdminSidebar";
 import AdminHeader from "../../components/church-admin/AdminHeader";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../../lib/api";
 
 
 const Icon = ({ file, className = "h-4 w-4", alt = "" }) => (
@@ -26,14 +26,10 @@ function LegendDot({ color, label }) {
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ churchName: "", joinCode: null, totalParishioners: 0 });
   const [churchAppId, setChurchAppId] = useState(localStorage.getItem("churchAppId") || null);
-  const api = axios.create({
-    baseURL: "http://localhost:4000",
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
 
-  const ensureChurchId = async () => {
+   const ensureChurchId = async () => {
     if (churchAppId) return churchAppId;
-    const { data } = await api.get("/api/church-admin/mine");
+    const { data } = await api.get("/api/church-admin/mine");               // ← use shared api
     localStorage.setItem("churchAppId", data.id);
     setChurchAppId(data.id);
     return data.id;
@@ -41,17 +37,16 @@ export default function AdminDashboard() {
 
   const loadStats = async () => {
     const id = await ensureChurchId();
-    const { data } = await api.get(`/api/church-admin/applications/${id}/stats`);
+    const { data } = await api.get(`/api/church-admin/applications/${id}/stats`); // ← use shared api
     setStats(data);
   };
 
-const handleGenerateCode = async () => {
-  if (stats.joinCode) return; // guard in UI + here
-  const id = await ensureChurchId();
-  await api.post(`/api/church-admin/applications/${id}/join-code`);
-  await loadStats();
-};
-
+  const handleGenerateCode = async () => {
+    if (stats.joinCode) return;
+    const id = await ensureChurchId();
+    await api.post(`/api/church-admin/applications/${id}/join-code`);      // ← use shared api
+    await loadStats();
+  };
   useEffect(() => { loadStats(); }, []); // load on mount
 
   const Header = (

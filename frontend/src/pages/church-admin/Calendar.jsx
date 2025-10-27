@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import dayjs from 'dayjs';
-import axios from 'axios';
+import { api } from "../../lib/api";
 import AdminSidebar from "../../components/church-admin/AdminSidebar";
 import AdminHeader from "../../components/church-admin/AdminHeader";
 
 
-axios.defaults.baseURL = "http://localhost:4000";
+api.defaults.baseURL = "http://localhost:4000";
 function EventPill({ title, muted }) {
   return (
     <span
@@ -53,7 +53,7 @@ export default function ParishCalendar() {
       try {
         // include auth header if your /me/church route is protected
         const token = localStorage.getItem("token");
-        const res = await axios.get("/api/church-admin/me/church", {
+        const res = await api.get("/api/church-admin/me/church", {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         setChurchAppId(res.data?.church?.id || null);
@@ -68,7 +68,7 @@ export default function ParishCalendar() {
     (async () => {
       if (!churchAppId) return;
       try {
-        const res = await axios.get("/api/events", { params: { churchId: churchAppId } });
+        const res = await api.get("/api/events", { params: { churchId: churchAppId } });
         setEvents(res.data || []);
       } catch (e) {
         console.error("Error fetching events:", e);
@@ -85,7 +85,7 @@ export default function ParishCalendar() {
       churchRef: churchAppId,
     };
     try {
-      const { data } = await axios.post("/api/events", payload);
+      const { data } = await api.post("/api/events", payload);
       setEvents((prev) => [...prev, data]);
        setSelectedEvent(data);
       setShowModal(false);
@@ -97,7 +97,7 @@ export default function ParishCalendar() {
 
   const handleEditEvent = async () => {
     try {
-      const { data } = await axios.patch(`/api/events/${editingEvent._id}`, newEvent);
+      const { data } = await api.patch(`/api/events/${editingEvent._id}`, newEvent);
       setEvents((prev) => prev.map((e) => (e._id === data._id ? data : e)));
       setSelectedEvent(se => (se && se._id === data._id ? data : se));
       setShowModal(false);
@@ -112,7 +112,7 @@ const handleDeleteEvent = async (id) => {
    const targetId = id || selectedEvent?._id || editingEvent?._id;
    if (!targetId) return;
    try {
-     await axios.delete(`/api/events/${targetId}`);
+     await api.delete(`/api/events/${targetId}`);
      setEvents((prev) => prev.filter((e) => e._id !== targetId));
      setSelectedEvent(se => (se && se._id === targetId ? null : se));
      setSelectedEvent(null);

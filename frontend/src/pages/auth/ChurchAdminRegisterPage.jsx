@@ -1,6 +1,6 @@
 // src/pages/auth/ChurchAdminRegisterPage.jsx
 import React, { useState } from "react";
-import axios from "axios";
+import { api } from "../../lib/api";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -47,7 +47,7 @@ const ChurchAdminRegisterPage = () => {
       form.append("certificate", certificateFile); // field name "certificate" on backend
 
       // 👉 adjust this endpoint to your API (kept obvious on purpose)
-      const { data } = await axios.post(
+      const { data } = await api.post(
         "http://localhost:4000/api/church-admin/register",
         form,
         { headers: { "Content-Type": "multipart/form-data" } }

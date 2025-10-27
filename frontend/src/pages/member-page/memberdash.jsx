@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../../lib/api";
 import Navbar from "../../components/member-pages/NavbarAndHero";
 import Hero from "../../components/Home-Page/Hero";
 import FeatureCards from "../../components/Home-Page/FeatureCards";
@@ -13,21 +13,25 @@ export default function MemberDash() {
   const [church, setChurch] = useState(null);
 
   useEffect(() => {
-    const api = axios.create({
-      baseURL: "http://localhost:4000",
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    api.get("/api/members/me/church").then(({ data }) => setChurch(data.church)).catch(() => setChurch(null));
+    (async () => {
+      try {
+        const { data } = await api.get("/api/members/me/church"); // use shared client
+        setChurch(data?.church ?? null);
+      } catch {
+        setChurch(null);
+      }
+    })();
   }, []);
 
   return (
     <>
       <Navbar />
-      {/* Simple banner to verify code linkage */}
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-4 py-3 text-sm text-slate-700">
           {church ? (
-            <>You are joined to <span className="font-semibold text-orange-600">{church.name}</span>{church.joinCode ? <> (code <span className="tracking-widest">{church.joinCode}</span>)</> : null}.</>
+            <>You are joined to <span className="font-semibold text-orange-600">{church.name}</span>
+              {church.joinCode ? <> (code <span className="tracking-widest">{church.joinCode}</span>)</> : null}.
+            </>
           ) : (
             <>You are not linked to a church yet.</>
           )}

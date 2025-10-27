@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../../lib/api";
 import { useNavigate } from "react-router-dom";
 import SideNav from "../../components/Super-admin/SideNav"; // Import SideNav component
 import TopNav from "../../components/Super-admin/TopNav"; // Import TopNav component
@@ -20,7 +20,7 @@ const DashboardPage = () => {
       }
 
       try {
-        const response = await axios.get("http://localhost:4000/api/profile", {
+        const response = await api.get("http://localhost:4000/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 

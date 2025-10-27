@@ -1,6 +1,6 @@
 // pages/RegisterPage.jsx
 import React, { useState } from "react";
-import axios from "axios";
+import { api } from "../../lib/api";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import GoogleButton from "../../components/GoogleButton.jsx";
@@ -38,7 +38,7 @@ const handleSubmit = async (e) => {
   }
 
   try {
-    await axios.post("http://localhost:4000/api/register", {
+    await api.post("http://localhost:4000/api/register", {
       username,
       email,
       password,
