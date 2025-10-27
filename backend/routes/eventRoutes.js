@@ -44,61 +44,47 @@ router.post("/", async (req, res) => {
  * List events by church
  * GET /api/events?churchId=<id>
  */
-router.get("/", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    const { churchId } = req.query;
-    if (!churchId || !mongoose.Types.ObjectId.isValid(churchId)) {
-      return res.status(400).json({ message: "Invalid or missing churchId" });
-    }
-    const events = await Event.find({ churchRef: churchId }).sort({ date: 1 }).lean();
-    res.json(events);
-  } catch (error) {
-    console.error("Error fetching events:", error);
-    res.status(500).json({ message: "Server error" });
-  }
+    const { title, time, location, description, date, churchRef } = req.body;
+    const newEvent = await Event.create({ title, time, location, description, date, churchRef });
+
+    // broadcast to that church’s room
+    const io = req.app.get("io");
+    io?.to(`church:${churchRef}`).emit("event:new", newEvent);
+
+    res.status(201).json(newEvent);
+  } catch (e) { res.status(500).json({ message: "Server error" }); }
 });
 
 /**
  * Update event
  * PATCH /api/events/:id
  */
+// Update
 router.patch("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid id" });
+    const ev = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!ev) return res.status(404).json({ message: "Not found" });
 
-    const payload = { ...req.body };
-    if (payload.date) {
-      const d = new Date(payload.date);
-      if (isNaN(d.getTime())) return res.status(400).json({ message: "Invalid date" });
-      payload.date = d;
-    }
+    const io = req.app.get("io");
+    io?.to(`church:${ev.churchRef}`).emit("event:updated", ev);
 
-    const updated = await Event.findByIdAndUpdate(id, payload, { new: true, runValidators: true });
-    if (!updated) return res.status(404).json({ message: "Event not found" });
-    res.json(updated);
-  } catch (error) {
-    console.error("Error updating event:", error);
-    res.status(500).json({ message: "Server error" });
-  }
+    res.json(ev);
+  } catch (e) { res.status(500).json({ message: "Server error" }); }
 });
 
-/**
- * Delete event
- * DELETE /api/events/:id
- */
+// Delete
 router.delete("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid id" });
+    const ev = await Event.findByIdAndDelete(req.params.id);
+    if (!ev) return res.status(404).json({ message: "Not found" });
 
-    const removed = await Event.findByIdAndDelete(id);
-    if (!removed) return res.status(404).json({ message: "Event not found" });
+    const io = req.app.get("io");
+    io?.to(`church:${ev.churchRef}`).emit("event:deleted", { id: String(ev._id) });
+
     res.json({ ok: true });
-  } catch (error) {
-    console.error("Error deleting event:", error);
-    res.status(500).json({ message: "Server error" });
-  }
+  } catch (e) { res.status(500).json({ message: "Server error" }); }
 });
 
 export default router;

@@ -12,6 +12,13 @@ import churchAdminRoutes from "./routes/churchAdminRoutes.js";
 import ChurchApplication from "./models/ChurchApplication.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import path from "path";
+import { createServer } from "http";
+import { Server as SocketIOServer } from "socket.io";
+
+
+
+
+
 dotenv.config();
 
 const app = express();
@@ -27,6 +34,24 @@ const ServiceSchema = new mongoose.Schema({
   pricePerKg: Number,
 });
 const Service = mongoose.model("Service", ServiceSchema);
+
+const httpServer = createServer(app);
+const io = new SocketIOServer(httpServer, {
+  cors: { origin: "http://localhost:5173" },
+});
+app.set("io", io);
+io.on("connection", (socket) => {
+  socket.on("join:church", (churchId) => {
+    if (churchId) socket.join(`church:${churchId}`);
+  });
+});
+
+
+// start (use httpServer.listen now)
+httpServer.listen(PORT, () =>
+  console.log(`✅ API running on http://localhost:${PORT}`)
+);
+
 
 const OrderSchema = new mongoose.Schema(
   {
