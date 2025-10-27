@@ -47,10 +47,6 @@ io.on("connection", (socket) => {
 });
 
 
-// start (use httpServer.listen now)
-httpServer.listen(PORT, () =>
-  console.log(`✅ API running on http://localhost:${PORT}`)
-);
 
 
 const OrderSchema = new mongoose.Schema(
@@ -354,7 +350,11 @@ async function start() {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MongoDB connected");
      await seedSuperAdmin();
-    app.listen(PORT, () => console.log(`✅ API running on http://localhost:${PORT}`));
+    // start (use httpServer.listen now)
+httpServer.listen(PORT, () =>
+  console.log(`✅ API running on http://localhost:${PORT}`)
+);
+
   } catch (err) {
     console.error("❌ MongoDB connection failed:", err.message);
     process.exit(1);
