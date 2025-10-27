@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import dayjs from 'dayjs';
+import axios from 'axios'; 
 import AdminSidebar from "../../components/church-admin/AdminSidebar";
 import AdminHeader from "../../components/church-admin/AdminHeader";
 
@@ -31,7 +32,7 @@ export default function ParishCalendar() {
   const [showModal, setShowModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: "", time: "", location: "", description: "" });
   const [editingEvent, setEditingEvent] = useState(null); // Track the event being edited
-
+  const [churchAppId, setChurchAppId] = useState(null);
   const currentDate = dayjs();
   const [viewMonth, setViewMonth] = useState(currentDate); // Start with the current month
 
@@ -43,39 +44,60 @@ export default function ParishCalendar() {
 
   // Group events by date for easy rendering
   const byDate = useMemo(() => {
-    const map = new Map();
-    for (const e of events) {
-      map.set(e.date, (map.get(e.date) || []).concat(e));
-    }
-    return map;
-  }, [events]);
+  const map = new Map();
+  events.forEach((e) => {
+    map.set(e.date, (map.get(e.date) || []).concat(e));
+  });
+  return map;
+}, [events]); // Recalculate when events change
 
-  const handleSaveEvent = () => {
-    const newEventWithDate = { ...newEvent, date: dayjs(selected).format("YYYY-MM-DD") }; // Ensure date is in correct format
-    setEvents((prevEvents) => {
-      const updatedEvents = [...prevEvents, newEventWithDate];
-      return updatedEvents;
-    });
-    setShowModal(false);
-    setNewEvent({ title: "", time: "", location: "", description: "" });
+
+const handleSaveEvent = async () => {
+  const newEventWithDate = {
+    ...newEvent,
+    date: dayjs(selected).format("YYYY-MM-DD"),  // Ensure 'selected' is a valid date
+    churchRef: churchAppId, // Send the church reference
   };
 
-  const handleEditEvent = () => {
-    const updatedEvents = events.map((event) =>
-      event.date === editingEvent.date ? { ...event, ...newEvent } : event
-    );
-    setEvents(updatedEvents);
+  try {
+    const response = await axios.post("/api/events", newEventWithDate);  // Change URL to relative
+    setEvents((prevEvents) => [...prevEvents, response.data]);  // Update state with new event
+    setShowModal(false);
+    setNewEvent({ title: "", time: "", location: "", description: "" });
+  } catch (error) {
+    console.error("Error saving event:", error);
+  }
+};
+
+
+
+
+ const handleEditEvent = async () => {
+  const updatedEvent = { ...editingEvent, ...newEvent };
+
+  try {
+    const response = await axios.patch(`/api/events/${editingEvent._id}`, updatedEvent);
+    setEvents((prevEvents) => prevEvents.map((event) => (event._id === response.data._id ? response.data : event)));
     setShowModal(false);
     setEditingEvent(null);
     setNewEvent({ title: "", time: "", location: "", description: "" });
-  };
+  } catch (error) {
+    console.error("Error editing event:", error);
+  }
+};
 
-  const handleDeleteEvent = () => {
-    const updatedEvents = events.filter((event) => event.date !== editingEvent.date);
-    setEvents(updatedEvents);
+
+const handleDeleteEvent = async () => {
+  try {
+    await axios.delete(`/api/events/${editingEvent._id}`);
+    setEvents((prevEvents) => prevEvents.filter((event) => event._id !== editingEvent._id));  // Remove the event from state
     setShowModal(false);
     setEditingEvent(null);
-  };
+  } catch (error) {
+    console.error("Error deleting event:", error);
+  }
+};
+
 
   // When clicking on a date, show the event details if an event exists
   const handleDateClick = (date) => {
@@ -88,10 +110,19 @@ export default function ParishCalendar() {
     }
   };
 
-  useEffect(() => {
-    // Syncs events after adding, editing, or deleting
-    // When the events state changes, it'll re-render the component with updated events
-  }, [events]);
+useEffect(() => {
+  const fetchEvents = async () => {
+    try {
+      const response = await axios.get(`/api/events/${churchAppId}`);
+      setEvents(response.data);  // Update state with events from the backend
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
+
+  if (churchAppId) fetchEvents();
+}, [churchAppId]);  // fetch events when churchAppId is set
+
 
   return (
     <div className="min-h-screen bg-[#FBF7F3]">
@@ -134,7 +165,7 @@ export default function ParishCalendar() {
                     </div>
 
                     <div className="mt-2 space-y-1">
-                      {evts.map((e, idx) => (
+                     {evts.map((e, idx) => (
                         <button key={idx} onClick={() => setSelected(e)} className="block text-left">
                           <EventPill title={e.title} muted={e.muted} />
                         </button>

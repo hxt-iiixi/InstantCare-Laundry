@@ -10,6 +10,7 @@ import { sendOTPEmail } from "./utils/mailer.js";
 import { OAuth2Client } from "google-auth-library";
 import churchAdminRoutes from "./routes/churchAdminRoutes.js";
 import ChurchApplication from "./models/ChurchApplication.js";
+import eventRoutes from "./routes/eventRoutes.js";
 import path from "path";
 dotenv.config();
 
@@ -18,7 +19,7 @@ app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 app.use("/api/church-admin", churchAdminRoutes); 
-
+app.use("/api/events", eventRoutes);
 
 const ServiceSchema = new mongoose.Schema({
   name: { type: String, required: true },
