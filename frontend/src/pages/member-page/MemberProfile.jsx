@@ -41,16 +41,17 @@ export default function MemberProfile() {
       <Navbar />
       {/* Profile Header with Bible Image Side by Side */}
       <div className="relative flex items-center justify-between">
+
         {/* Profile Cover Image */}
         <div className="w-full">
           <img
             src={coverImage}
             alt="Cover Image"
-            className="w-full h-[300px] object-cover rounded-t-lg"
+            className="w-[897px] h-[300px] object-cover rounded-t-lg mx-auto mt-10"
           />
         </div>
         {/* Profile Avatar */}
-        <div className="absolute top-1/2 left-1/4 transform -translate-x-1/4 -translate-y-1/2 p-4 rounded-full shadow-lg bg-white">
+        <div className="absolute top-1/2 left-1/4 transform -translate-x-1/4 -translate-y-1/2 p-4 rounded-full shadow-lg bg-white mt-52">
           <img
             src={avatar}
             alt="User Avatar"

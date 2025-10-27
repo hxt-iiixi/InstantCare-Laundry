@@ -91,8 +91,8 @@ export default function NavbarAndHero() {
                   <NavLink
                     to={itemDef.to}
                     className={({ isActive }) =>
-                      `relative pb-1 transition-colors ${
-                        isActive ? "font-semibold text-black" : "text-zinc-600 hover:text-black"
+                      `relative pb-1 transition-colors whitespace-nowrap ${
+                        isActive ? "font-semibold text-black" : "text-zinc-600 hover:text-black "
                       }`
                     }
                   >
