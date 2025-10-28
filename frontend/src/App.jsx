@@ -24,7 +24,8 @@ import Contact from './pages/landing-page/Contacts.jsx';
 import PersistentLayout from "./components/PersistentLayout";  
 import Memberdash from "./pages/member-page/memberdash.jsx";
 import MemberProfile from "./pages/member-page/MemberProfile.jsx"; 
-import MemberChurch from "./pages/member-page/MemberChurch.jsx"; 
+import MemberChurch from "./pages/member-page/MemberChurch.jsx";
+import ChurchProfile from "./pages/church-admin/ChurchProfile.jsx";
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -70,6 +71,7 @@ export default function App() {
       {/* Church-admin only */}
       <Route path="/church-dash" element={ <ProtectedRoute roles={["church-admin"]} element={<ChurchDash />} /> } />
       <Route path="/parish-calendar" element={ <ProtectedRoute roles={["church-admin"]} element={<Calendar />} /> } />
+       <Route path="/ChurchProfile" element={ <ProtectedRoute roles={["church-admin"]} element={<ChurchProfile />} /> } />
      
 
       {/* Member only */}
