@@ -1,90 +1,103 @@
+// routes/eventRoutes.js
 import express from "express";
-import mongoose from "mongoose";
 import Event from "../models/Event.js";
 import auth from "../middleware/auth.js";
+import ChurchApplication from "../models/ChurchApplication.js";
 
 const router = express.Router();
 
-/**
- * Create an event
- * Body: { title, time, location, description, date, churchRef }
- */
-router.post("/", async (req, res) => {
+async function getRequesterChurchId(req) {
+  // members carry churchRef on their user doc (set at registration)
+  if (req.user.role === "member") return req.user.churchRef?.toString() || null;
+
+  // church-admin is linked by application email
+  if (req.user.role === "church-admin" || req.user.role === "superadmin") {
+    const appDoc = await ChurchApplication
+      .findOne({ email: req.user.email.toLowerCase() })
+      .lean();
+    return appDoc?._id?.toString() || null;
+  }
+  return null;
+}
+
+// GET /api/events?churchId=...
+router.get("/", auth, async (req, res) => {
   try {
-    let { title, time, location, description, date, churchRef } = req.body;
-
-    // Ensure date is stored as Date
-    const jsDate = new Date(date); // accepts 'YYYY-MM-DD'
-    if (isNaN(jsDate.getTime())) {
-      return res.status(400).json({ message: "Invalid date" });
+    const { churchId } = req.query;
+    const myChurch = await getRequesterChurchId(req);
+    if (!churchId || !myChurch || churchId !== myChurch) {
+      return res.status(403).json({ message: "Forbidden" });
     }
-
-    // Ensure churchRef is a valid ObjectId
-    if (!churchRef || !mongoose.Types.ObjectId.isValid(churchRef)) {
-      return res.status(400).json({ message: "Invalid or missing churchRef" });
-    }
-
-    const newEvent = await Event.create({
-      title,
-      time,
-      location,
-      description,
-      date: jsDate,
-      churchRef,
-    });
-
-    res.status(201).json(newEvent);
-  } catch (error) {
-    console.error("Error saving event:", error);
+    const items = await Event.find({ churchRef: churchId }).sort({ date: 1 }).lean();
+    res.json(items);
+  } catch (e) {
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/**
- * List events by church
- * GET /api/events?churchId=<id>
- */
-router.post("/", async (req, res) => {
+// CREATE (admins only) – event is always pinned to admin’s church
+router.post("/", auth, async (req, res) => {
   try {
-    const { title, time, location, description, date, churchRef } = req.body;
-    const newEvent = await Event.create({ title, time, location, description, date, churchRef });
+    if (req.user.role !== "church-admin" && req.user.role !== "superadmin") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+    const myChurch = await getRequesterChurchId(req);
+    if (!myChurch) return res.status(403).json({ message: "Forbidden" });
 
-    // broadcast to that church’s room
-    const io = req.app.get("io");
-    io?.to(`church:${churchRef}`).emit("event:new", newEvent);
+    const { title, time, location, description, date } = req.body;
+    const ev = await Event.create({ title, time, location, description, date, churchRef: myChurch });
 
-    res.status(201).json(newEvent);
-  } catch (e) { res.status(500).json({ message: "Server error" }); }
+    // realtime to that church only
+    req.app.get("io").to(`church:${myChurch}`).emit("event:new", ev.toObject());
+    res.status(201).json(ev);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
 });
 
-/**
- * Update event
- * PATCH /api/events/:id
- */
-// Update
-router.patch("/:id", async (req, res) => {
+// UPDATE (admins only)
+router.put("/:id", auth, async (req, res) => {
   try {
-    const ev = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!ev) return res.status(404).json({ message: "Not found" });
+    if (req.user.role !== "church-admin" && req.user.role !== "superadmin") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+    const myChurch = await getRequesterChurchId(req);
+    const ev = await Event.findById(req.params.id);
+    if (!ev || ev.churchRef.toString() !== myChurch) return res.status(404).json({ message: "Not found" });
 
-    const io = req.app.get("io");
-    io?.to(`church:${ev.churchRef}`).emit("event:updated", ev);
+    Object.assign(ev, {
+      title: req.body.title ?? ev.title,
+      time: req.body.time ?? ev.time,
+      location: req.body.location ?? ev.location,
+      description: req.body.description ?? ev.description,
+      date: req.body.date ?? ev.date,
+      churchRef: myChurch, // cannot move to another church
+    });
+    await ev.save();
 
+    req.app.get("io").to(`church:${myChurch}`).emit("event:updated", ev.toObject());
     res.json(ev);
-  } catch (e) { res.status(500).json({ message: "Server error" }); }
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
 });
 
-// Delete
-router.delete("/:id", async (req, res) => {
+// DELETE (admins only)
+router.delete("/:id", auth, async (req, res) => {
   try {
-    const ev = await Event.findByIdAndDelete(req.params.id);
-    if (!ev) return res.status(404).json({ message: "Not found" });
+    if (req.user.role !== "church-admin" && req.user.role !== "superadmin") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+    const myChurch = await getRequesterChurchId(req);
+    const ev = await Event.findById(req.params.id).lean();
+    if (!ev || ev.churchRef.toString() !== myChurch) return res.status(404).json({ message: "Not found" });
 
-    const io = req.app.get("io");
-    io?.to(`church:${ev.churchRef}`).emit("event:deleted", { id: String(ev._id) });
-
+    await Event.findByIdAndDelete(ev._id);
+    req.app.get("io").to(`church:${myChurch}`).emit("event:deleted", { id: String(ev._id) });
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ message: "Server error" }); }
+  } catch (e) {
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 export default router;

@@ -6,28 +6,48 @@ import { FaCaretDown } from 'react-icons/fa'; // Dropdown icon
 import userAvatar from "/src/assets/images/user-avatar.png"; // Sample avatar image
 import { toast } from "sonner";
 
+
+function getDisplayNameFromStorage() {
+  return (
+    localStorage.getItem("name") ||
+    localStorage.getItem("username") ||
+    (localStorage.getItem("prefillEmail") || localStorage.getItem("email") || "").split("@")[0] ||
+    "User"
+  );
+}
+function getAvatarFromStorage(defaultAvatar) {
+  return localStorage.getItem("avatar") || defaultAvatar;
+}
+
+
+
 export default function NavbarAndHero() {
   const prefersReduce = useReducedMotion();
   const navigate = useNavigate();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);  // To toggle the dropdown menu
-  const [userName, setUserName] = useState(localStorage.getItem("name") || "User"); // Dynamically get the username
-  const [avatar, setAvatar] = useState(localStorage.getItem("avatar") || userAvatar); // Default avatar if not set
+  const [userName, setUserName] = useState(() => getDisplayNameFromStorage());
+  const [avatar, setAvatar]   = useState(() => getAvatarFromStorage(userAvatar));
 
   useEffect(() => {
-    // Update state when localStorage changes
-    const handleStorageChange = () => {
-      setUserName(localStorage.getItem("name"));
-      setAvatar(localStorage.getItem("avatar"));
-    };
+  const refreshFromStorage = () => {
+    setUserName(getDisplayNameFromStorage());
+    setAvatar(getAvatarFromStorage(userAvatar));
+  };
 
-    window.addEventListener("storage", handleStorageChange);
+  // will NOT fire in same tab — but keep for multi-tab updates
+  window.addEventListener("storage", refreshFromStorage);
+  // custom event we’ll dispatch after login/logout
+  window.addEventListener("auth:update", refreshFromStorage);
 
-    // Clean up the event listener
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, []);
+  // also refresh once on mount (in case localStorage was set just before)
+  refreshFromStorage();
+
+  return () => {
+    window.removeEventListener("storage", refreshFromStorage);
+    window.removeEventListener("auth:update", refreshFromStorage);
+  };
+}, []);
 
   const row = {
     hidden: {},
@@ -60,7 +80,7 @@ export default function NavbarAndHero() {
     localStorage.removeItem("name");
     localStorage.removeItem("avatar");
     localStorage.removeItem("churchName"); // Also clear church name if stored
-
+    window.dispatchEvent(new Event("auth:update"));
     // Show toast and redirect to login page
     toast.success("You have logged out.");
     navigate("/login", { replace: true });

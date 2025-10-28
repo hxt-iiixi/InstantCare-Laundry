@@ -48,7 +48,8 @@ const LoginPage = () => {
     if (data?.user?.role) localStorage.setItem("role", data.user.role);
     if (data?.user?.name) localStorage.setItem("name", data.user.name);  // Save user name
     if (data?.user?.churchName) localStorage.setItem("churchName", data.user.churchName);  // Save church name for church admins
-
+    if (data?.user?.username) localStorage.setItem("username", data.user.username);
+    window.dispatchEvent(new Event("auth:update"));
     // Route by role
     const dest = getDefaultRouteByRole(data?.user?.role);
     toast.success("Welcome back!");
@@ -210,7 +211,9 @@ const LoginPage = () => {
                         if (data?.user?.role) localStorage.setItem("role", data.user.role);
                         if (data?.user?.name) localStorage.setItem("name", data.user.name);  
                         if (data?.user?.email) localStorage.setItem("prefillEmail", data.user.email);
-
+                        if (data?.user?.username) localStorage.setItem("username", data.user.username);
+                          if (data?.user?.avatar) localStorage.setItem("avatar", data.user.avatar);
+                          window.dispatchEvent(new Event("auth:update"));
                         toast.success("Welcome back!");
                         const dest = getDefaultRouteByRole(data?.user?.role);
                         navigate(dest, { replace: true });
