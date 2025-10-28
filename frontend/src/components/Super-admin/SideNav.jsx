@@ -52,19 +52,6 @@ const SideNav = () => {
               System Management
             </NavLink>
           </li>
-          <li className="mb-4">
-            <NavLink
-              to="/UserRoles"
-              className={({ isActive }) =>
-                isActive
-                  ? "flex items-center gap-3 p-2 bg-gray-200 text-orange-500 font-semibold rounded-md"
-                  : "flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md"
-              }
-            >
-              <img src={userRolesIcon} alt="User Roles" className="w-6 h-6" />
-              User Roles
-            </NavLink>
-          </li>
         </ul>
       </nav>
     </div>

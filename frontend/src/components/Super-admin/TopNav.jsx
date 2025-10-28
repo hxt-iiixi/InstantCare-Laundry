@@ -43,14 +43,6 @@ const TopNav = () => {
         >
           System Management
         </NavLink>
-        <NavLink
-          to="/UserRoles"
-          className={({ isActive }) =>
-            isActive ? "text-orange-500 font-semibold" : "text-zinc-900 hover:text-gray-400"
-          }
-        >
-          User Roles
-        </NavLink>
       </div>
 
       {/* Right side - Search Bar, Button, Profile */}

@@ -49,11 +49,6 @@ export default function AdminSidebar() {
           Parish Calendar
         </NavLink>
 
-        <NavLink to="/ministry-monitoring" className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}>
-          <img src="/src/assets/icons/hands.svg" alt="AmPower" className="h-[20px] w-[20px]" />
-          Ministry Monitoring
-        </NavLink>
-
         <NavLink to="/parishioner-engagement" className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}>
           <img src="/src/assets/icons/heart.svg" alt="AmPower" className="h-[20px] w-[20px]" />
           Parishioner Engagement
