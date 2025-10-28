@@ -26,7 +26,7 @@ import PersistentLayout from "./components/PersistentLayout";
 
 import Memberdash from "./pages/member-page/memberdash.jsx";
 import MemberProfile from "./pages/member-page/MemberProfile.jsx"; 
-import MemberChurch from "./pages/member-page/MemberChurch.jsx"; 
+import MemberChurch from "./pages/member-page/MemberChurch.jsx";
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));

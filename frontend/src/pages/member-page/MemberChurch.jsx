@@ -6,6 +6,7 @@ import Navbar from "../../components/member-pages/Navbar";
 import placeholderCover from "../../assets/images/cover-member.png";
 import eventImage from "../../assets/images/event-image.png";
 
+
 // point api to your API
 api.defaults.baseURL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -227,5 +228,7 @@ export default function MemberChurch() {
         </div>
       </div>
     </div>
+
+    
   );
 }
