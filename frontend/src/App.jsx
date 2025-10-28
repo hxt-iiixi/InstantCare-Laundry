@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { getDefaultRouteByRole } from "./utils/auth.js";
-
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import DashboardPage from "./pages/Super-Admin/DashboardPage.jsx";
@@ -23,7 +22,6 @@ import ChurchDash from "./pages/church-admin/AdminDashboard.jsx";
 import DailyDevotion from "./pages/church-admin/DailyDevotion.jsx";
 import Contact from './pages/landing-page/Contacts.jsx';
 import PersistentLayout from "./components/PersistentLayout";  
-
 import Memberdash from "./pages/member-page/memberdash.jsx";
 import MemberProfile from "./pages/member-page/MemberProfile.jsx"; 
 import MemberChurch from "./pages/member-page/MemberChurch.jsx"; 
@@ -83,6 +81,7 @@ export default function App() {
       <Route path="/SystemManagement" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<SystemManagementPage />} /> } />
       <Route path="/UserRoles" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<UserRolesPage />} /> } />
       <Route path="/account" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<AccountControlPage />} /> } />
+      
 
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />

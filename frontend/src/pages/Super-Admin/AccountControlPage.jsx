@@ -155,7 +155,7 @@ export default function AccountControlPage() {
               <div className="flex items-center gap-2">
                 <img src={badgeIcon} alt="" className="h-6 w-6" />
                 <h1 className="text-2xl md:text-[26px] font-semibold text-zinc-900">
-                  Account Control <span className="font-normal italic">Church Registrations</span>
+                  Account Control <span className="font-guthen text-3xl tracking-wider text-stone-800">Church Registrations</span>
                 </h1>
               </div>
               <p className="text-sm md:text-[14px] text-zinc-600 mt-2 max-w-3xl">

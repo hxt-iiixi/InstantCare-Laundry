@@ -6,3 +6,10 @@
 html, body, #root { background:#fff; color:#111827; height:auto }
 body { margin:0; display:block; }
 a { color: inherit; text-decoration: none; }
+
+@font-face {
+  font-family: 'Guthen Bloots Personal Use';
+  src: url('/src/assets/fonts/Guthen-Bloots-Personal-Use.woff2') format('woff2');
+  font-style: normal;
+  font-display: swap;
+}

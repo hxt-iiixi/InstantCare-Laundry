@@ -56,9 +56,12 @@ const DashboardPage = () => {
           <div className="flex items-start  bg-[#fff5f0] pl-8 rounded-md mb-12">
             {/* Left side - Text and Button */}
             <div className="flex flex-col w-1/2 ">
-              <h1 className="text-3xl font-semibold text-black text-left mb-6 mt-5 ">
-                Welcome, Ampower Team!
+              <div className="flex flex-row  items-baseline">
+                <h1 className="text-3xl font-semibold text-black text-left mb-6 mt-5 ">
+                Welcome, Ampower Team! 
               </h1>
+              <span className="font-guthen text-4xl tracking-wider text-stone-800">Dashboard</span>
+              </div>
               <p className="text-lg text-black text-left mb-8">
                 Gain comprehensive control and insights over all church operations and system settings. Your central hub for management.
               </p>

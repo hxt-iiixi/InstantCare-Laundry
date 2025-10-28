@@ -177,8 +177,6 @@ const UserRolesPage = () => {
             </div>
           </div>
         </div>
-
-        <Footer />
       </div>
     </div>
   );
