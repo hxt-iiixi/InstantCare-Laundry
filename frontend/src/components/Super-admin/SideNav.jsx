@@ -12,7 +12,13 @@ const SideNav = () => {
   const handleLogout = () => {
     // clear anything auth-related you cache
     localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("name");
+  localStorage.removeItem("avatar");
+  localStorage.removeItem("churchName");
+    
     localStorage.removeItem("churchAppId");
+    window.dispatchEvent(new Event("auth:update"));
     // add other keys if you use them (e.g., "churchName")
     navigate("/login");
   };
