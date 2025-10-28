@@ -39,6 +39,7 @@ export default function ParishCalendar() {
   const days = Array.from({ length: 42 }).map((_, i) => startGrid.add(i, 'day'));
 
   const byDate = useMemo(() => {
+    
     const map = new Map();
     events.forEach((e) => {
       const key = dayjs(e.date).format("YYYY-MM-DD");
@@ -129,7 +130,7 @@ const handleDeleteEvent = async (id) => {
       setSelectedEvent(evts[0]);
     } else {
       setSelectedEvent(null);
-      setNewDate(k);     // keep the clicked date for the modal
+      setNewDate(k);    
       setShowModal(true);
     }
   };

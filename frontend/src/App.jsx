@@ -20,12 +20,12 @@ import RoleSelectPage from "/src/pages/auth/RoleSelectPage.jsx";
 import Calendar from "./pages/church-admin/Calendar.jsx";
 import ChurchDash from "./pages/church-admin/AdminDashboard.jsx";
 import DailyDevotion from "./pages/church-admin/DailyDevotion.jsx";
+import Userroles from "./pages/church-admin/UserRoles.jsx";
 import Contact from './pages/landing-page/Contacts.jsx';
 import PersistentLayout from "./components/PersistentLayout";  
 import Memberdash from "./pages/member-page/memberdash.jsx";
 import MemberProfile from "./pages/member-page/MemberProfile.jsx"; 
-import MemberChurch from "./pages/member-page/MemberChurch.jsx";
-import ChurchProfile from "./pages/church-admin/ChurchProfile.jsx";
+import MemberChurch from "./pages/member-page/MemberChurch.jsx"; 
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -71,7 +71,7 @@ export default function App() {
       {/* Church-admin only */}
       <Route path="/church-dash" element={ <ProtectedRoute roles={["church-admin"]} element={<ChurchDash />} /> } />
       <Route path="/parish-calendar" element={ <ProtectedRoute roles={["church-admin"]} element={<Calendar />} /> } />
-       <Route path="/ChurchProfile" element={ <ProtectedRoute roles={["church-admin"]} element={<ChurchProfile />} /> } />
+       <Route path="/userroles" element={ <ProtectedRoute roles={["church-admin"]} element={<Userroles />} /> } />
      
 
       {/* Member only */}

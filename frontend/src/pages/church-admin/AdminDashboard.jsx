@@ -26,7 +26,7 @@ function LegendDot({ color, label }) {
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ churchName: "", joinCode: null, totalParishioners: 0 });
   const [churchAppId, setChurchAppId] = useState(localStorage.getItem("churchAppId") || null);
-
+  const [upcomingEventsCount, setUpcomingEventsCount] = useState(0);
    const ensureChurchId = async () => {
     if (churchAppId) return churchAppId;
     const { data } = await api.get("/api/church-admin/mine");               // ← use shared api
@@ -41,14 +41,27 @@ export default function AdminDashboard() {
     setStats(data);
   };
 
+  const loadUpcomingEvents = async () => {
+    const id = await ensureChurchId();
+    // Expecting your backend to support ?churchId=...
+    const { data: evts = [] } = await api.get(`/api/events`, { params: { churchId: id } });
+    const now = new Date();
+    const count = evts.filter(e => e?.date && new Date(e.date) > now).length;
+    setUpcomingEventsCount(count);
+  };
+
   const handleGenerateCode = async () => {
     if (stats.joinCode) return;
     const id = await ensureChurchId();
     await api.post(`/api/church-admin/applications/${id}/join-code`);      // ← use shared api
     await loadStats();
   };
-  useEffect(() => { loadStats(); }, []); // load on mount
-
+ useEffect(() => {
+    (async () => {
+      await loadStats();
+      await loadUpcomingEvents();
+    })();
+  }, []);
   const Header = (
     <div className="flex items-center justify-between">
       <h2 className="text-2xl font-semibold text-slate-900">
@@ -115,7 +128,9 @@ export default function AdminDashboard() {
                   <div className="text-sm text-slate-600">Upcoming Events</div>
                   <Icon file="kpi-dots" className="h-4 w-4 opacity-60" />
                 </div>
-                <div className="mt-2 text-2xl font-semibold text-orange-500">0</div>
+               <div className="mt-2 text-2xl font-semibold text-orange-500">
+                  {upcomingEventsCount}
+                </div>
               </div>
             </div>
           </div>

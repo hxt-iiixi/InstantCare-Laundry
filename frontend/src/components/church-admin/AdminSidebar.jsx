@@ -12,7 +12,7 @@ export default function AdminSidebar() {
   const churchName = localStorage.getItem("churchName") || "St Joseph Parish";
 
   const handleLogout = () => {
-    // 1) Clear auth data
+
     localStorage.removeItem("token");
     localStorage.removeItem("username"); 
     localStorage.removeItem("role");
@@ -20,20 +20,18 @@ export default function AdminSidebar() {
     localStorage.removeItem("avatar");
     localStorage.removeItem("churchName");
 
-    // 2) Remove axios auth header so future calls are unauthenticated
+
     try {
       delete api.defaults.headers.common.Authorization;
     } catch (_) {}
 
-    // (optional) notify other tabs
+
     window.dispatchEvent(new StorageEvent("storage", { key: "token" }));
 
-    // 3) Redirect
     toast.success("You have logged out.");
     navigate("/login", { replace: true });
 
-    // If you still see stale UI due to global state, uncomment hard reload:
-    // window.location.assign("/login");
+
   };
 
   return (
@@ -54,7 +52,7 @@ export default function AdminSidebar() {
           Parishioner Engagement
         </NavLink>
 
-        <NavLink to="/user-roles" className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}>
+        <NavLink to="/userroles" className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}>
           <img src="/src/assets/icons/user.svg" alt="AmPower" className="h-[20px] w-[20px]" />
           User Roles
         </NavLink>
