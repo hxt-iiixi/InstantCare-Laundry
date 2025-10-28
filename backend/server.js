@@ -243,7 +243,8 @@ app.post("/api/register", async (req, res) => {
       isVerified: false,
       regOTP: otp,
       regOTPExpiry: expiry,
-      churchRef, // <- link to the church
+      churchRef,
+      status: "inactive",
     });
 
     await sendOTPEmail(email, `Your AmPower verification code is: ${otp}`);
@@ -680,12 +681,10 @@ app.get("/api/church-admin/members", auth, async (req, res) => {
     if (!churchId) return res.status(400).json({ message: "Missing churchId" });
 
     // only members attached to that church
-    const users = await User.find(
-      { role: "member", churchRef: churchId },
-      { _id: 1, name: 1, username: 1, email: 1, avatar: 1, role: 1, churchRef: 1 }
-    )
-      .sort({ createdAt: -1 })
-      .lean();
+  const users = await User.find(
+    { role: "member", churchRef: churchId },
+    { _id: 1, name: 1, username: 1, email: 1, avatar: 1, role: 1, churchRef: 1, phone: 1, dob: 1, status: 1 }
+  ).sort({ createdAt: -1 }).lean();
 
     res.json({ users });
   } catch (e) {
@@ -847,4 +846,78 @@ app.get("/api/church-admin/me/church", auth, async (req, res) => {
     res.json({ church: { id: String(appDoc._id), name: appDoc.churchName, joinCode: appDoc.joinCode || null }});
   } catch (e) { res.status(500).json({ message: "Server error" }); }
 });
+
+
+app.patch("/api/church-admin/members/:id/status", auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["active", "inactive"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const member = await User.findById(req.params.id);
+    if (!member || member.role !== "member") return res.status(404).json({ message: "Member not found" });
+
+    // only same-church admin (or superadmin) can edit
+    if (req.user.role !== "superadmin") {
+      const adminChurch = await ChurchApplication.findOne({ email: req.user.email.toLowerCase() }).lean();
+      if (!adminChurch) return res.status(403).json({ message: "Forbidden" });
+      if (String(member.churchRef) !== String(adminChurch._id)) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+    }
+
+    member.status = status;
+    await member.save();
+
+    res.json({ ok: true, user: { id: String(member._id), status: member.status } });
+  } catch (e) {
+    console.error("PATCH status error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/api/church-admin/mine", auth, async (req, res) => {
+  try {
+    const appDoc = await ChurchApplication.findOne({ email: req.user.email.toLowerCase() }).lean();
+    if (!appDoc) return res.status(404).json({ message: "No church application found" });
+    res.json({ id: String(appDoc._id), name: appDoc.churchName, joinCode: appDoc.joinCode || null });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// === Per-church stats used by dashboard ===
+app.get("/api/church-admin/applications/:id/stats", auth, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const app = await ChurchApplication.findById(id).lean();
+    if (!app) return res.status(404).json({ message: "Church not found" });
+
+    if (req.user.role !== "superadmin") {
+      const mine = await ChurchApplication.findOne({ email: req.user.email.toLowerCase() }).lean();
+      if (!mine || String(mine._id) !== String(id)) return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const totalParishioners = await User.countDocuments({ role: "member", churchRef: id });
+    const activeMembers     = await User.countDocuments({ role: "member", churchRef: id, status: "active" });
+    const inactiveMembers   = totalParishioners - activeMembers;
+
+    res.json({
+      churchName: app.churchName || "",
+      joinCode: app.joinCode || null,
+      totalParishioners,
+      activeMembers,
+      inactiveMembers,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
 start();

@@ -55,31 +55,37 @@ useEffect(() => {
   window.addEventListener("apps:update", onAppsUpdate);
   return () => window.removeEventListener("apps:update", onAppsUpdate);
 }, []);
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login"); // redirect if not logged in
-        return;
-      }
+  // helper
+const authHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+};
 
-      try {
-        const response = await api.get("http://localhost:4000/api/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+useEffect(() => {
+  const fetchUserData = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    try {
+      // ✅ correct path, uses api baseURL
+      const { data } = await api.get("/api/me/profile", authHeaders());
+      setUser(data.user);
+    } catch (err) {
+      console.error(
+        "profile error:",
+        err?.response?.status,
+        err?.response?.data || err.message
+      );
+      setError("Failed to fetch user data");
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchUserData();
+}, [navigate]);
 
-        console.log("User response:", response.data);
-        setUser(response.data.user); // set user state
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch user data");
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");

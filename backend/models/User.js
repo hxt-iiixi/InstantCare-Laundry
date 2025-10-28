@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema(
     resetOTPExpiry: Date,
 
     // Profile
+    status: { type: String, enum: ["active", "inactive"], default: "inactive" },
     firstName: String,
     lastName:  String,
     bio:       String,
@@ -33,6 +34,12 @@ const userSchema = new mongoose.Schema(
     cover:     String, // profile cover
 
     churchRef: { type: mongoose.Schema.Types.ObjectId, ref: "ChurchApplication", index: true },
+    status: {
+    type: String,
+    enum: ["active", "inactive"],
+    default: "inactive",
+    index: true,
+  },
   },
   { timestamps: true }
 );

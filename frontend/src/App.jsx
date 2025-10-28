@@ -20,6 +20,7 @@ import RoleSelectPage from "/src/pages/auth/RoleSelectPage.jsx";
 import Calendar from "./pages/church-admin/Calendar.jsx";
 import ChurchDash from "./pages/church-admin/AdminDashboard.jsx";
 import ChurchProfile from "./pages/church-admin/ChurchProfile.jsx";
+import ParishEngagement from "./pages/church-admin/ParishEngagement.jsx";
 import Userroles from "./pages/church-admin/UserRoles.jsx";
 import Contact from './pages/landing-page/Contacts.jsx';
 import MembersContact from './pages/member-page/MContacts.jsx';
@@ -74,6 +75,7 @@ export default function App() {
       <Route path="/parish-calendar" element={ <ProtectedRoute roles={["church-admin"]} element={<Calendar />} /> } />
       <Route path="/userroles" element={ <ProtectedRoute roles={["church-admin"]} element={<Userroles />} /> } />
       <Route path="/Cprofile" element={ <ProtectedRoute roles={["church-admin"]} element={<ChurchProfile />} /> } />
+      <Route path="/ParishEngagement" element={ <ProtectedRoute roles={["church-admin"]} element={<ParishEngagement />} /> } />
      
 
       {/* Member only */}
@@ -81,10 +83,11 @@ export default function App() {
       <Route path="/profile" element={ <ProtectedRoute roles={["member"]} element={<MemberProfile />} /> } />
       <Route path="/church" element={ <ProtectedRoute roles={["member"]} element={<MemberChurch />} /> } />
       <Route path="/MembersContact" element={<PersistentLayout><MembersContact /></PersistentLayout>} />
+      
       {/* Super-admin */}
       <Route path="/dashboard" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<DashboardPage />} /> } />
       <Route path="/SystemManagement" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<SystemManagementPage />} /> } />
-      <Route path="/UserRoles" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<UserRolesPage />} /> } />
+      <Route path="/Userroles" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<UserRolesPage />} /> } />
       <Route path="/account" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<AccountControlPage />} /> } />
       
 

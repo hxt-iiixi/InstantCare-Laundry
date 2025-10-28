@@ -6,47 +6,48 @@ import imgkids from "../../assets/icons/jesus with kids.png";
 import { api } from "../../lib/api";
 
 export default function Contact() {
-  const [churchName, setChurchName] = useState("AmPower");
+  const [churchName, setChurchName] = useState("Your Church");
   const [churchEmail, setChurchEmail] = useState("");
   const [message, setMessage] = useState("");
 
- useEffect(() => {
+useEffect(() => {
   let mounted = true;
 
   (async () => {
     try {
-      // 1) Try member → church
-      let churchId = null;
-      try {
-        const mc = await api.get("/api/members/me/church");
-        churchId = mc?.data?.church?.id || null;
-      } catch {}
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // 2) Fallback: church-admin → own church
+      // 1) member → church (same pattern as MemberChurch)
+      const mc = await api.get("/api/members/me/church", { headers });
+      const mChurch = mc?.data?.church || null;
+
+      // fallback: if you're logged in as church-admin (not member)
+      let churchId = mChurch?.id || null;
       if (!churchId) {
         try {
-          const ac = await api.get("/api/church-admin/me/church");
+          const ac = await api.get("/api/church-admin/me/church", { headers });
           churchId = ac?.data?.church?.id || null;
         } catch {}
       }
 
-      if (!churchId || !mounted) return; // no linked church
+      if (!churchId || !mounted) return;
 
-      // 3) Load full church document (has churchName + email)
-      const { data } = await api.get(`/api/church-admin/applications/${churchId}`);
-      const ch = data?.church || {};
+      // 2) full church doc (has email + official name)
+      const app = await api.get(`/api/church-admin/applications/${churchId}`, { headers });
+      const ch = app?.data?.church || {};
 
+      const name = mChurch?.name || ch.churchName || ch.name || "Your Church";
       if (!mounted) return;
 
-      const name = ch.churchName || ch.name || "AmPower";
       setChurchName(name);
       setChurchEmail(ch.email || "");
 
-      // keep other UI (like headers) in sync if you rely on this
+      // keep other UI (e.g., headers) in sync if they read localStorage
       localStorage.setItem("churchName", name);
       window.dispatchEvent(new CustomEvent("churchName:update", { detail: name }));
     } catch (e) {
-      console.error("Contact init error:", e?.message || e);
+      console.error("Contact init error:", e?.response?.data || e?.message || e);
     }
   })();
 

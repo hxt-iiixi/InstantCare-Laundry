@@ -47,20 +47,20 @@ export default function AdminSidebar() {
           Parish Calendar
         </NavLink>
 
-        <NavLink to="/parishioner-engagement" className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}>
+        <NavLink to="/ParishEngagement" className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}>
           <img src="/src/assets/icons/heart.svg" alt="AmPower" className="h-[20px] w-[20px]" />
           Parishioner Engagement
         </NavLink>
 
         <NavLink to="/userroles" className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}>
           <img src="/src/assets/icons/user.svg" alt="AmPower" className="h-[20px] w-[20px]" />
-          User Roles
+          Users
         </NavLink>
       </nav>
 
       <div className="absolute bottom-0 inset-x-0 px-4 pb-4">
         <Link
-          to="/settings"
+          to="/Cprofile"
           className="flex items-center gap-2 text-slate-600 hover:text-orange-600 text-[15px] px-3 py-2 rounded-lg hover:bg-orange-50"
         >
           <img src="/src/assets/icons/system.svg" alt="AmPower" className="h-[20px] w-[20px]" />
