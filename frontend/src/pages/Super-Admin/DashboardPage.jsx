@@ -10,7 +10,51 @@ const DashboardPage = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+  const [stats, setStats] = useState({
+  total: 0,
+  pending: 0,
+  approved: 0,
+  rejected: 0,
+});
+const [cardsLoading, setCardsLoading] = useState(true);
+
+const fetchAppStats = async () => {
+  try {
+    setCardsLoading(true);
+    const token = localStorage.getItem("token");
+    const { data } = await api.get("/api/church-admin/applications", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    const list = Array.isArray(data) ? data : [];
+    const counts = list.reduce(
+      (acc, r) => {
+        acc.total += 1;
+        const s = String(r.status || "").toLowerCase();
+        if (s === "pending") acc.pending += 1;
+        else if (s === "approved") acc.approved += 1;
+        else if (s === "rejected") acc.rejected += 1;
+        return acc;
+      },
+      { total: 0, pending: 0, approved: 0, rejected: 0 }
+    );
+
+    setStats(counts);
+  } catch (e) {
+    console.error("Failed to load app stats", e);
+  } finally {
+    setCardsLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchAppStats();
+
+  // Optional: live refresh if other pages broadcast updates
+  const onAppsUpdate = () => fetchAppStats();
+  window.addEventListener("apps:update", onAppsUpdate);
+  return () => window.removeEventListener("apps:update", onAppsUpdate);
+}, []);
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token");
@@ -82,30 +126,47 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Group 2: Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className=" p-6 rounded-lg shadow-md text-center">
-              <h2 className="text-2xl text-left font-semibold">Total Registered Churches</h2>
-              <p className="text-[34px] text-left font-bold text-gray-700 mt-4">5</p>
-              <p className="text-sm text-left text-gray-700 font-semibold mt-4">Overall churches in the system</p>
+         {/* Group 2: Cards Grid (Dynamic) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  title: "Total Registered Churches",
+                  value: stats.total,
+                  sub: "Overall churches in the system",
+                },
+                {
+                  title: "Pending Registrations",
+                  value: stats.pending,
+                  sub: "Awaiting your approval",
+                },
+                {
+                  title: "Total Approved Churches",
+                  value: stats.approved,
+                  sub: "Overall approved in the system",
+                },
+                {
+                  title: "Total Rejected Churches",
+                  value: stats.rejected,
+                  sub: "Declined applications",
+                },
+              ].map((c, i) => (
+                <div key={i} className="p-6 rounded-lg shadow-md text-center bg-white">
+                  <h2 className="text-2xl text-left font-semibold">{c.title}</h2>
+
+                  {cardsLoading ? (
+                    <div className="mt-4 h-10 w-24 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <p className="text-[34px] text-left font-bold text-gray-700 mt-4">
+                      {c.value}
+                    </p>
+                  )}
+
+                  <p className="text-sm text-left text-gray-700 font-semibold mt-4">
+                    {c.sub}
+                  </p>
+                </div>
+              ))}
             </div>
-            <div className=" p-6 rounded-lg shadow-md text-center">
-              <h2 className="text-2xl text-left font-semibold">Pending Registrations</h2>
-              <p className="text-[34px]  text-left font-bold text-gray-700 mt-4">2</p>
-               <p className="text-sm text-left text-gray-700 font-semibold mt-4">Awaiting your approval</p>
-            </div>
-            <div className=" p-6 rounded-lg shadow-md text-center">
-              <h2 className="text-2xl text-left font-semibold">Total Approved Churches</h2>
-              <p className="text-[34px]  text-left font-bold text-gray-700 mt-4">2</p>
-               <p className="text-sm text-left text-gray-700 font-semibold mt-4">Overall approved in the system</p>
-            </div>
-            <div className=" p-6 rounded-lg shadow-md text-center">
-              <h2 className="text-2xl text-left font-semibold">Total Rejected Churches</h2>
-              <p className="text-[34px] text-left font-bold text-gray-700 mt-4">1</p>
-               <p className="text-sm text-left text-gray-700 font-semibold mt-4">Awaiting your approval</p>
-            </div>
-          </div>
-           
         </div> 
        
       </div>

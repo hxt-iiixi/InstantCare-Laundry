@@ -97,10 +97,11 @@ export default function AccountControlPage() {
     try {
       await api.patch(`/api/church-admin/applications/${id}/approve`);
       toast.success("Application approved.");
-
+      window.dispatchEvent(new Event("apps:update"));
       setRows((prev) => prev.map((r) => (r._id === id ? { ...r, status: "approved" } : r)));
     } catch (e) {
       toast.error(e?.response?.data?.message || "Failed to approve.");
+
     }
   };
 
@@ -108,6 +109,7 @@ export default function AccountControlPage() {
     try {
       await api.patch(`/api/church-admin/applications/${id}/reject`);
       toast.success("Application rejected.");
+      window.dispatchEvent(new Event("apps:update"));
       setRows((prev) => prev.map((r) => (r._id === id ? { ...r, status: "rejected" } : r)));
     } catch (e) {
       toast.error(e?.response?.data?.message || "Failed to reject.");
