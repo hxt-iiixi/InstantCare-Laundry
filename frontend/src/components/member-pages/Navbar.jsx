@@ -6,7 +6,7 @@
   import userAvatar from "/src/assets/images/user-avatar.png"; // Sample avatar image
   import { toast } from "sonner";
   import { api } from "../../lib/api";
-
+import { useGlobalAnnouncement } from "../../lib/useGlobalAnnouncement";
 
 function getDisplayNameFromStorage() {
   return (
@@ -26,7 +26,7 @@ function getAvatarFromStorage(defaultAvatar) {
   export default function NavbarAndHero() {
     const prefersReduce = useReducedMotion();
     const navigate = useNavigate();
-
+    useGlobalAnnouncement();
     const [dropdownOpen, setDropdownOpen] = useState(false);  // To toggle the dropdown menu
     const [userName, setUserName] = useState(() => getDisplayNameFromStorage());
     const [avatar, setAvatar]   = useState(() => getAvatarFromStorage(userAvatar));

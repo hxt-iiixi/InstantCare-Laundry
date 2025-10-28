@@ -50,13 +50,68 @@ const io = new SocketIOServer(httpServer, {
 });
 app.set("io", io);
 io.on("connection", (socket) => {
+    socket.join("all");
   socket.on("join:church", (churchId) => {
     if (churchId) socket.join(`church:${churchId}`);
   });
 });
 
+const AnnouncementSchema = new mongoose.Schema(
+  {
+    content: { type: String, required: true },
+    audience: { type: String, default: "all" }, // "all" | "member" | "church-admin" | "superadmin" | etc.
+    active: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+const Announcement = mongoose.model("Announcement", AnnouncementSchema);
+// Create announcement (superadmin only) and broadcast
+app.post("/api/announcements", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "superadmin") return res.status(403).json({ message: "Forbidden" });
+    const { content, audience = "all" } = req.body;
+    const doc = await Announcement.create({ content, audience });
 
+    // Broadcast to everyone; client will filter by audience locally (and server filters on fetch)
+    const io = req.app.get("io");
+    io.to("all").emit("announcement:new", {
+      id: String(doc._id),
+      content: doc.content,
+      audience: doc.audience,
+      createdAt: doc.createdAt,
+    });
 
+    res.json({ ok: true, id: String(doc._id) });
+  } catch (e) {
+    console.error("POST /api/announcements error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/api/announcements/latest", auth, async (req, res) => {
+  try {
+    const role = req.user.role || "member";
+    const doc = await Announcement.findOne({
+      active: true,
+      $or: [{ audience: "all" }, { audience: role }],
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!doc) return res.json({ announcement: null });
+    res.json({
+      announcement: {
+        id: String(doc._id),
+        content: doc.content,
+        audience: doc.audience,
+        createdAt: doc.createdAt,
+      },
+    });
+  } catch (e) {
+    console.error("GET /api/announcements/latest error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 const OrderSchema = new mongoose.Schema(
   {

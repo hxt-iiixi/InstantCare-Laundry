@@ -6,7 +6,7 @@ import SideNav from "../../components/Super-admin/SideNav";
 import Footer from "../../components/Home-Page/ChurchInfoFooter";
 import { api } from "../../lib/api"; // keep for later use
 import bell from "../../assets/icons/bell.png";
-
+import { useGlobalAnnouncement } from "../../lib/useGlobalAnnouncement";
 const TABS = ["All", "Join Request", "Leave Request", "Pending", "Approved", "Reject"];
 
 const MOCK_DATA = [
@@ -32,153 +32,29 @@ function StatusBadge({ status }) {
   }
 }
 
-function MinistriesRequest({ data = MOCK_DATA }) {
-  const [activeTab, setActiveTab] = useState("All");
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(null);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return data.filter((row) => {
-      if (activeTab !== "All") {
-        if (activeTab === "Pending" && row.status !== "Pending") return false;
-        if (activeTab === "Approved" && row.status !== "Approved") return false;
-        if (activeTab === "Reject" && !/reject|rejected/i.test(row.status)) return false;
-        if (activeTab === "Join Request" && row.type !== "Join Request") return false;
-        if (activeTab === "Leave Request" && row.type !== "Leave Request") return false;
-      }
-      if (!q) return true;
-      return (
-        row.member.toLowerCase().includes(q) ||
-        row.ministry.toLowerCase().includes(q) ||
-        row.type.toLowerCase().includes(q)
-      );
-    });
-  }, [activeTab, query, data]);
-
-  return (
-    <div className="p-4 md:p-6">
-      <div className="bg-white border rounded-lg shadow-card p-6">
-        <div className="mb-5">
-          <h1 className="text-3xl md:text-4xl font-serif font-semibold text-gray-900">Ministries Request</h1>
-          <p className="text-sm text-gray-500 mt-1">Lead and provide music for services.</p>
-        </div>
-
-        <div className="flex items-center gap-3 mb-5 flex-wrap">
-          {TABS.map((tab) => {
-            const isActive = tab === activeTab;
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition ${isActive ? "bg-orange-500 text-white shadow" : "bg-transparent text-gray-700 hover:bg-gray-100"}`}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mb-6">
-          <input
-            type="search"
-            placeholder="Search by member name or ministry"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full border rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300 placeholder:text-sm"
-          />
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left">
-            <thead>
-              <tr className="bg-gray-100 text-gray-700">
-                <th className="px-6 py-4 rounded-tl-md">Members</th>
-                <th className="px-6 py-4">Ministry</th>
-                <th className="px-6 py-4">Request Type</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 rounded-tr-md">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No requests found.</td>
-                </tr>
-              ) : (
-                filtered.map((row) => (
-                  <tr key={row.id} className="hover:bg-white/50">
-                    <td className="px-6 py-6 align-middle text-gray-800">{row.member}</td>
-                    <td className="px-6 py-6 text-gray-600">{row.ministry}</td>
-                    <td className="px-6 py-6 text-gray-600">{row.type}</td>
-                    <td className="px-6 py-6"><StatusBadge status={row.status} /></td>
-                    <td className="px-6 py-6">
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setSelected(row)} className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:opacity-95">View</button>
-                        <button onClick={() => { toast.success(`Approved ${row.member}`); }} className="px-3 py-2 text-sm rounded-md border border-green-200 text-green-700 hover:bg-green-50">Approve</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" aria-modal="true" role="dialog">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setSelected(null)} aria-hidden="true" />
-          <div className="relative w-full max-w-2xl mx-4 bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">{selected.member}</h2>
-                  <p className="text-sm text-gray-500 mt-1">{selected.ministry}</p>
-                </div>
-                <div><StatusBadge status={selected.status} /></div>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 gap-4">
-                <div>
-                  <h3 className="text-sm text-gray-600 uppercase tracking-wide">Request Type</h3>
-                  <p className="mt-1 text-gray-800">{selected.type}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm text-gray-600 uppercase tracking-wide">Notes</h3>
-                  <p className="mt-1 text-gray-800">{selected.notes}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t">
-              <button onClick={() => setSelected(null)} className="px-4 py-2 rounded-md text-sm border hover:bg-gray-50">Close</button>
-              <button onClick={() => { toast.success(`Approved ${selected.member}`); setSelected(null); }} className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm">Approve</button>
-              <button onClick={() => { toast.error(`Rejected ${selected.member}`); setSelected(null); }} className="px-4 py-2 rounded-md bg-red-600 text-white text-sm">Reject</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function SystemManagementPage() {
   const [announcementContent, setAnnouncementContent] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
+  useGlobalAnnouncement();
+ const handlePublishAnnouncement = async () => {
+  try {
+    const payload = {
+      content: announcementContent.trim(),
+      audience: (targetAudience || "all").trim().toLowerCase(), // "all" | "member" | "church-admin" | "superadmin"
+    };
+    if (!payload.content) return toast.error("Write an announcement first.");
 
-  const handlePublishAnnouncement = async () => {
-    try {
-      console.log("Announcement Published:", announcementContent, targetAudience);
-      setAnnouncementContent("");
-      setTargetAudience("");
-      toast.success("Announcement published successfully!");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to publish announcement.");
-    }
-  };
+    await api.post("/api/announcements", payload);
+    toast.success("Announcement published! Live users are notified.");
 
+    setAnnouncementContent("");
+    setTargetAudience("");
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to publish announcement.");
+  }
+};
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Top nav — removed the extra header wrapper that was covering content */}

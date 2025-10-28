@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-
+import { useGlobalAnnouncement } from "../../lib/useGlobalAnnouncement";
 const MAP = {
   "/church-dash": "Admin Dashboard",
   "/parish-calendar": "Parish Calendar",
@@ -28,7 +28,7 @@ function getTitle(pathname) {
 export default function AdminHeader({ className = "" }) {
   const { pathname } = useLocation();
   const title = getTitle(pathname);
-
+  useGlobalAnnouncement();
   // Retrieve church name from localStorage
   const churchName = localStorage.getItem("churchName") || "St Joseph Parish";
 
