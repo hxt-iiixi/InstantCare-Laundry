@@ -69,10 +69,8 @@ function getAvatarFromStorage(defaultAvatar) {
 
     const links = [
       { to: "/memberdash", label: "Home" },
-      { to: "/about", label: "About" },
-      { to: "/events", label: "Events" },
-      { to: "/contact", label: "Contact" },
-      { to: "/calendar", label: "Calendar" },
+   
+      { to: "/MembersContact", label: "Contact" },
       { to: "/church", label: "My Church" },
     ];
 

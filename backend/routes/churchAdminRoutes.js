@@ -48,7 +48,18 @@ router.get("/me/church", auth, getMyChurch);
 router.get("/applications/:id/stats", auth, getChurchStats);
 router.get("/mine", auth, getMyChurchApplication);    
 
-
+router.get("/applications/:id", auth, async (req, res) => {
+  const doc = await ChurchApplication.findById(req.params.id).lean();
+  if (!doc) return res.status(404).json({ message: "Not found" });
+  res.json({
+    _id: String(doc._id),
+    churchName: doc.churchName,
+    address: doc.address || "",
+    email: doc.email || "",
+    contactNumber: doc.contactNumber || "",
+    status: doc.status,
+  });
+});
 
 
 

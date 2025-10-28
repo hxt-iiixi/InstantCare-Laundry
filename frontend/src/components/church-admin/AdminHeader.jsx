@@ -1,4 +1,6 @@
-import { useLocation } from "react-router-dom";
+
+ import React, { useEffect, useState } from "react";
+import { useLocation, Link } from "react-router-dom";
 import { useGlobalAnnouncement } from "../../lib/useGlobalAnnouncement";
 const MAP = {
   "/church-dash": "Admin Dashboard",
@@ -30,7 +32,24 @@ export default function AdminHeader({ className = "" }) {
   const title = getTitle(pathname);
   useGlobalAnnouncement();
   // Retrieve church name from localStorage
-  const churchName = localStorage.getItem("churchName") || "St Joseph Parish";
+ const [churchName, setChurchName] = useState(
+   localStorage.getItem("churchName") || "St Joseph Parish"
+ );
+ useEffect(() => {
+   const onStorage = (e) => {
+     if (e.key === "churchName") {
+       setChurchName((e.newValue || "St Joseph Parish").trim());
+     }
+   };
+   const onCustom = (e) =>
+     setChurchName((e.detail || "St Joseph Parish").trim());
+   window.addEventListener("storage", onStorage);
+   window.addEventListener("churchName:update", onCustom);
+   return () => {
+     window.removeEventListener("storage", onStorage);
+     window.removeEventListener("churchName:update", onCustom);
+   };
+}, []);
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200">
@@ -43,7 +62,13 @@ export default function AdminHeader({ className = "" }) {
 
         <div className="flex items-center justify-end gap-3">
           <span className="text-sm text-slate-600">{churchName}</span> {/* Dynamically display church name */}
-          <img src="/src/assets/images/profile.png" alt="Profile" className="h-9 w-9 rounded-full object-cover" />
+          <Link to="/Cprofile" className="inline-block">
+            <img
+              src="/src/assets/images/profile.png"
+              alt="Profile"
+              className="h-9 w-9 rounded-full object-cover cursor-pointer hover:opacity-90"
+            />
+          </Link>
         </div>
       </div>
     </header>

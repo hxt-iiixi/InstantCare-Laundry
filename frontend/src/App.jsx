@@ -19,9 +19,10 @@ import ChurchAdminRegisterPage from "./pages/auth/ChurchAdminRegisterPage.jsx";
 import RoleSelectPage from "/src/pages/auth/RoleSelectPage.jsx";
 import Calendar from "./pages/church-admin/Calendar.jsx";
 import ChurchDash from "./pages/church-admin/AdminDashboard.jsx";
-import DailyDevotion from "./pages/church-admin/DailyDevotion.jsx";
+import ChurchProfile from "./pages/church-admin/ChurchProfile.jsx";
 import Userroles from "./pages/church-admin/UserRoles.jsx";
 import Contact from './pages/landing-page/Contacts.jsx';
+import MembersContact from './pages/member-page/MContacts.jsx';
 import PersistentLayout from "./components/PersistentLayout";  
 import Memberdash from "./pages/member-page/memberdash.jsx";
 import MemberProfile from "./pages/member-page/MemberProfile.jsx"; 
@@ -71,13 +72,15 @@ export default function App() {
       {/* Church-admin only */}
       <Route path="/church-dash" element={ <ProtectedRoute roles={["church-admin"]} element={<ChurchDash />} /> } />
       <Route path="/parish-calendar" element={ <ProtectedRoute roles={["church-admin"]} element={<Calendar />} /> } />
-       <Route path="/userroles" element={ <ProtectedRoute roles={["church-admin"]} element={<Userroles />} /> } />
+      <Route path="/userroles" element={ <ProtectedRoute roles={["church-admin"]} element={<Userroles />} /> } />
+      <Route path="/Cprofile" element={ <ProtectedRoute roles={["church-admin"]} element={<ChurchProfile />} /> } />
      
 
       {/* Member only */}
       <Route path="/memberdash" element={ <ProtectedRoute roles={["member"]} element={<Memberdash />} /> } />
       <Route path="/profile" element={ <ProtectedRoute roles={["member"]} element={<MemberProfile />} /> } />
-        <Route path="/church" element={ <ProtectedRoute roles={["member"]} element={<MemberChurch />} /> } />
+      <Route path="/church" element={ <ProtectedRoute roles={["member"]} element={<MemberChurch />} /> } />
+      <Route path="/MembersContact" element={<PersistentLayout><MembersContact /></PersistentLayout>} />
       {/* Super-admin */}
       <Route path="/dashboard" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<DashboardPage />} /> } />
       <Route path="/SystemManagement" element={ <ProtectedRoute roles={["superadmin","admin"]} element={<SystemManagementPage />} /> } />

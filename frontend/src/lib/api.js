@@ -7,6 +7,7 @@ const origin = raw.replace(/\/+$/, "").replace(/\/api$/, "");
 export const api = axios.create({
   baseURL: origin,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {

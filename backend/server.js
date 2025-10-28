@@ -15,7 +15,7 @@ import path from "path";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 
-
+import multer from "multer";
 
 
 
@@ -29,6 +29,11 @@ app.use(cors({
   credentials: true
 }));
 
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, "uploads"),
+  filename: (_req, file, cb) => cb(null, `${Date.now()}_${file.originalname.replace(/\s+/g,"_")}`)
+});
+const upload = multer({ storage });
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 app.use("/api/church-admin", churchAdminRoutes); 
@@ -307,10 +312,93 @@ app.post("/api/login", async (req, res) => {
 
 
 
-app.get("/api/profile", auth, (req, res) => {
-  res.json({ user: req.user });
+// Get full profile
+app.get("/api/me/profile", auth, async (req, res) => {
+  const u = await User.findById(req.user._id).lean();
+  if (!u) return res.status(404).json({ message: "Not found" });
+  const { password, regOTP, resetOTP, ...safe } = u;
+  res.json({ user: { id: String(u._id), ...safe } });
 });
 
+// Update profile (text fields)
+app.patch("/api/me/profile", auth, async (req, res) => {
+  const allowed = ["name","firstName","lastName","bio","phone","dob","avatar","cover"];
+  const update = {};
+  for (const k of allowed) if (k in req.body) update[k] = req.body[k];
+  const u = await User.findByIdAndUpdate(req.user._id, { $set: update }, { new: true }).lean();
+  const { password, regOTP, resetOTP, ...safe } = u;
+  res.json({ user: { id: String(u._id), ...safe } });
+});
+
+// Upload avatar/cover
+app.post("/api/me/upload", auth, upload.single("file"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "No file" });
+  const field = req.query.field === "cover" ? "cover" : "avatar";
+  const url = `/uploads/${req.file.filename}`;
+  await User.findByIdAndUpdate(req.user._id, { $set: { [field]: url } });
+  res.json({ field, url });
+});
+
+// Change password (optional; if you show change-password inputs)
+app.post("/api/me/change-password", auth, async (req, res) => {
+  const { current, next } = req.body || {};
+  const u = await User.findById(req.user._id);
+  if (!u?.password) return res.status(400).json({ message: "Account uses Google Sign-In." });
+  const ok = await bcrypt.compare(current || "", u.password);
+  if (!ok) return res.status(400).json({ message: "Current password is incorrect." });
+  u.password = await bcrypt.hash(next, 12);
+  await u.save();
+  res.json({ ok: true });
+});
+
+app.get("/api/church-admin/applications/:id", auth, async (req, res) => {
+  const doc = await ChurchApplication.findById(req.params.id).lean();
+  if (!doc) return res.status(404).json({ message: "Not found" });
+  res.json({
+    church: {
+      id: String(doc._id),
+      churchName: doc.churchName || "",
+      city: doc.city || "",
+      province: doc.province || "",
+      address: doc.address || "",
+      contactNumber: doc.contactNumber || "",
+      bio: doc.bio || "",
+      avatar: doc.avatar || "",
+      cover: doc.cover || "",
+      email: doc.email || ""     
+    }
+  });
+});
+
+// Update church profile (text fields)
+app.patch("/api/church-admin/applications/:id/profile", auth, async (req, res) => {
+  const allowed = ["churchName","city","province","address","contactNumber","bio","avatar","cover"];
+  const update = {};
+  allowed.forEach(k => { if (k in req.body) update[k] = req.body[k]; });
+  const doc = await ChurchApplication.findByIdAndUpdate(req.params.id, { $set: update }, { new: true }).lean();
+  res.json({
+    church: {
+      id: String(doc._id),
+      churchName: doc.churchName || "",
+      city: doc.city || "",
+      province: doc.province || "",
+      address: doc.address || "",
+      contactNumber: doc.contactNumber || "",
+      bio: doc.bio || "",
+      avatar: doc.avatar || "",
+      cover: doc.cover || ""
+    }
+  });
+});
+
+// Upload church avatar/cover
+app.post("/api/church-admin/applications/:id/upload", auth, upload.single("file"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "No file" });
+  const field = req.query.field === "cover" ? "cover" : "avatar";
+  const url = `/uploads/${req.file.filename}`;
+  await ChurchApplication.findByIdAndUpdate(req.params.id, { $set: { [field]: url } });
+  res.json({ field, url });
+});
 
 
 // 1) Request OTP
@@ -578,7 +666,33 @@ app.get("/api/members/me/church", auth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+app.get("/api/church-admin/members", auth, async (req, res) => {
+  try {
+    // allow superadmin to specify any church; church-admin defaults to their own church
+    let { churchId } = req.query;
 
+    if (req.user.role === "church-admin" && !churchId) {
+      const appDoc = await ChurchApplication.findOne({ email: req.user.email.toLowerCase() }).lean();
+      if (!appDoc) return res.json({ users: [] });
+      churchId = String(appDoc._id);
+    }
+
+    if (!churchId) return res.status(400).json({ message: "Missing churchId" });
+
+    // only members attached to that church
+    const users = await User.find(
+      { role: "member", churchRef: churchId },
+      { _id: 1, name: 1, username: 1, email: 1, avatar: 1, role: 1, churchRef: 1 }
+    )
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ users });
+  } catch (e) {
+    console.error("GET /api/church-admin/members error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 // --- Devotion Prompts (server-backed) ---
 const DevotionPromptSchema = new mongoose.Schema({
   churchRef: { type: mongoose.Schema.Types.ObjectId, ref: "ChurchApplication", required: true, index: true },
