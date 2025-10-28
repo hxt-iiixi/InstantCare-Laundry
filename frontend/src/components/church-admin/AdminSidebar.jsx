@@ -79,18 +79,6 @@ export default function AdminSidebar() {
         </NavLink>
 
         <NavLink
-          to="/daily-devotion"
-          className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}
-        >
-             <img
-            src="/src/assets/icons/book.svg"
-            alt="AmPower"
-            className="h-[20px] w-[20px]"
-          />
-          Daily Devotion
-        </NavLink>
-
-        <NavLink
           to="/user-roles"
           className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}
         >

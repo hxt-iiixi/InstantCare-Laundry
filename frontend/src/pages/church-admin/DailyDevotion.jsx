@@ -1,21 +1,43 @@
-import React from "react";
+// DailyDevotion.jsx
+import React, { useEffect, useState } from "react";
 import AdminSidebar from "../../components/church-admin/AdminSidebar";
 import AdminHeader from "../../components/church-admin/AdminHeader";
-import { useDailyRandomVerse } from "../../lib/useDailyRandomVerse"
-import { useReflectionPromptsAdmin } from "../../lib/reflectionPrompts";
+import { useDailyRandomVerse } from "../../lib/useDailyRandomVerse";
+import { useReflectionPrompts } from "../../lib/reflectionPrompts";
+
 const Icon = ({ file, className = "h-4 w-4", alt = "" }) => (
   <img src={`/src/assets/icons/${file}.svg`} alt={alt || file} className={className} draggable="false" />
 );
-
 const Img = ({ file, className = "w-full h-full object-cover", alt = "" }) => (
   <img src={`/src/assets/images/${file}`} alt={alt || file} className={className} draggable="false" />
 );
 
 export default function DailyDevotion() {
-  const { text, reference, translation, loading, error } = useDailyRandomVerse();
-  const {
-  items, add, remove, update, save, discard, dirty,
-} = useReflectionPromptsAdmin();
+  // alias loading so it doesn't clash with prompts loading
+  const { text, reference, translation, loading: verseLoading, error } = useDailyRandomVerse();
+
+  // get churchId once
+  const [churchId, setChurchId] = useState(null);
+  useEffect(() => {
+    const base = import.meta.env?.VITE_API_URL || "http://localhost:4000";
+    const token = localStorage.getItem("token");
+    (async () => {
+      try {
+        const res = await fetch(`${base}/api/members/me/church`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const data = await res.json();
+        setChurchId(data?.church?.id || null);
+      } catch (e) {
+        console.error("Failed to load churchId", e);
+        setChurchId(null);
+      }
+    })();
+  }, []);
+
+  // prompts hook (now syntactically complete + passed churchId)
+const { prompts } = useReflectionPrompts();
+
   return (
     <div className="min-h-screen bg-[#FBF7F3]">
       <AdminSidebar />
@@ -36,57 +58,30 @@ export default function DailyDevotion() {
 
             <div className="mt-3 border-l-4 border-orange-400 pl-4">
               <p className="italic text-slate-800">
-                {loading ? "Loading verse..." : error ? "Could not load verse." : `“${text}”`}
+                {verseLoading ? "Loading verse..." : error ? "Could not load verse." : `“${text}”`}
               </p>
               <p className="mt-2 text-sm text-slate-500">
-                {loading || error ? "" : `— ${reference} (${translation})`}
+                {verseLoading || error ? "" : `— ${reference} (${translation})`}
               </p>
-            </div>
-
-            <div className="mt-5 flex items-center gap-3">
-              <button className="rounded-md bg-[#D33131] text-white px-4 py-2 text-sm hover:opacity-95">Discard</button>
-              <button className="rounded-md bg-[#20A04C] text-white px-4 py-2 text-sm hover:opacity-95">Save changes</button>
             </div>
           </section>
 
           {/* Reflection Prompts */}
-         <section className="mt-7 rounded-xl border border-slate-200 bg-white shadow-sm p-5 md:p-6 relative">
+          <section className="mt-7 rounded-xl border border-slate-200 bg-white shadow-sm p-5 md:p-6 relative">
             <h3 className="text-lg md:text-xl font-semibold text-slate-900">Reflection Prompts</h3>
             <p className="text-sm text-slate-500 mt-1">Take a moment to reflect on today&apos;s message.</p>
 
-            {loading ? (
+            {promptsLoading  ? (
               <div className="mt-4 text-slate-500">Loading…</div>
             ) : (
               <div className="mt-4 space-y-4">
-                {items.map((q, i) => (
-                  <div key={i} className="border rounded-md p-3">
-                    <label className="block text-[13px] text-slate-700 mb-2">
-                      <span className="font-medium">{i + 1}. </span> Prompt
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={q}
-                      onChange={(e) => update(i, e.target.value)}
-                      placeholder="Write your prompt..."
-                      className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-[14px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
-                    />
-                    <div className="mt-2 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => remove(i)}
-                        className="text-sm text-red-600 hover:underline"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={add}
-                  className="rounded-md bg-slate-100 px-4 py-2 text-sm hover:bg-slate-200"
-                >
+                <ol className="mt-4 list-decimal list-inside space-y-3 text-[15px] text-slate-800">
+  {prompts.map((q, i) => (
+    <li key={i}>{q}</li>
+  ))}
+</ol>
+<p className="mt-2 text-sm text-slate-500">No need to type—just reflect quietly.</p>
+                <button type="button" onClick={add} className="rounded-md bg-slate-100 px-4 py-2 text-sm hover:bg-slate-200">
                   + Add prompt
                 </button>
               </div>
@@ -96,14 +91,14 @@ export default function DailyDevotion() {
               <button
                 onClick={discard}
                 className="rounded-md bg-[#D33131] text-white px-4 py-2 text-sm hover:opacity-95 disabled:opacity-60"
-                disabled={!dirty}
+                disabled={!dirty || !churchId}
               >
                 Discard
               </button>
               <button
                 onClick={save}
                 className="rounded-md bg-[#20A04C] text-white px-4 py-2 text-sm hover:opacity-95 disabled:opacity-60"
-                disabled={!dirty}
+                disabled={!dirty || !churchId}
               >
                 Save changes
               </button>
@@ -114,38 +109,8 @@ export default function DailyDevotion() {
           <button type="button" className="fixed right-6 bottom-24 md:bottom-20 h-12 w-12 rounded-full shadow-md bg-white border border-slate-200 overflow-hidden" aria-label="Helper">
             <Img file="avatar.jpg" />
           </button>
-
-          {/* Previous Devotions */}
-          <section className="mt-10">
-            <h4 className="text-2xl font-semibold text-slate-900 text-center">Previous Devotions</h4>
-            <div className="mt-6 grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              <DevotionCard img="devotion-1.jpg" date="May 15, 2024" title="The Power of Forgiveness" excerpt="Exploring the liberating power of forgiveness as taught in the scriptures, and how it transforms relationships." />
-              <DevotionCard img="devotion-2.jpg" date="May 14, 2024" title="Living in Gratitude" excerpt="A daily practice of gratitude can profoundly shift our perspective, bringing joy and peace into our lives." />
-              <DevotionCard img="devotion-3.jpg" date="May 13, 2024" title="Understanding Divine Love" excerpt="Delving into the depths of God’s unconditional love and how it shapes our identity and purpose." />
-              <DevotionCard img="devotion-4.jpg" date="May 12, 2024" title="Faith in Uncertain Times" excerpt="How to maintain unwavering faith when facing trials and uncertainties, trusting in God’s sovereign plan." />
-              <DevotionCard img="devotion-5.jpg" date="May 11, 2024" title="The Importance of Community" excerpt="Discovering the biblical call to fellowship and the strength found in supporting one another." />
-              <DevotionCard img="devotion-6.jpg" date="May 10, 2024" title="Prayer: Our Direct Line" excerpt="Exploring prayer as a vital spiritual discipline and how it connects us directly to God’s heart." />
-            </div>
-          </section>
         </div>
       </main>
-    </div>
-  );
-}
-
-/* ---------- small helpers ---------- */
-function Prompt({ n, q }) {
-  return (
-    <div>
-      <label className="block text-[13px] text-slate-700">
-        <span className="font-medium">{n}. </span>
-        {q}
-      </label>
-      <textarea
-        rows={3}
-        placeholder="Write your thoughts here..."
-        className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-[14px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
-      />
     </div>
   );
 }

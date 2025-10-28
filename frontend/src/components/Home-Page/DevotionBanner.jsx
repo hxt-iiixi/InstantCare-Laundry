@@ -1,6 +1,7 @@
 import { useDailyRandomVerse } from "../../lib/useDailyRandomVerse"
-import React, { useRef } from "react";
 import { Link } from "react-router-dom";
+
+import { useReflectionPrompts } from "../../lib/reflectionPrompts";
 import {
   motion,
   useReducedMotion,
@@ -8,7 +9,8 @@ import {
   useTransform,
   MotionConfig,
 } from "framer-motion";
-
+import { useEffect, useMemo, useRef, useState } from "react";
+import { io } from "socket.io-client";
 const BG = "/src/assets/images/devotion-bg.jpg";
 const ROSARY = "/src/assets/icons/rosary.png";
 const SPARKS = "/src/assets/icons/sparks.svg";
@@ -48,6 +50,8 @@ export default function DevotionBanner() {
 
   // ✅ Use the shared hook (reads the same localStorage key as Admin page)
   const { text, reference, translation, loading, error } = useDailyRandomVerse();
+  const { prompts } = useReflectionPrompts();
+
 
   return (
     <MotionConfig reducedMotion={prefersReduce ? "always" : "never"}>
@@ -129,7 +133,7 @@ export default function DevotionBanner() {
                 >
                   {loading || error ? "" : `— ${reference} (${translation})`}
                 </motion.p>
-
+ 
                 <motion.div
                   variants={word}
                   initial="hidden"

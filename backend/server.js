@@ -22,7 +22,13 @@ import { Server as SocketIOServer } from "socket.io";
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({
+   origin: ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174"],
+   methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+   allowedHeaders: ["Content-Type","Authorization"],
+  credentials: true
+}));
+
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 app.use("/api/church-admin", churchAdminRoutes); 
@@ -37,7 +43,10 @@ const Service = mongoose.model("Service", ServiceSchema);
 
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
-  cors: { origin: "http://localhost:5173" },
+   cors: {
+     origin: ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174"],
+     credentials: true,
+   },
 });
 app.set("io", io);
 io.on("connection", (socket) => {
@@ -515,7 +524,158 @@ app.get("/api/members/me/church", auth, async (req, res) => {
   }
 });
 
+// --- Devotion Prompts (server-backed) ---
+const DevotionPromptSchema = new mongoose.Schema({
+  churchRef: { type: mongoose.Schema.Types.ObjectId, ref: "ChurchApplication", required: true, index: true },
+  dateKey:   { type: String, required: true, index: true }, // "YYYY-MM-DD" Asia/Manila
+  items:     { type: [String], default: [] },
+}, { timestamps: true });
+DevotionPromptSchema.index({ churchRef: 1, dateKey: 1 }, { unique: true });
+const DevotionPrompt = mongoose.model("DevotionPrompt", DevotionPromptSchema);
+
+async function fetchRandomVersePrimary() {
+  const res = await fetch("https://bible-api.com/data/web/random");
+  if (!res.ok) throw new Error(`bible-api status ${res.status}`);
+  const data = await res.json();
+  const v = Array.isArray(data.verses) ? data.verses[0] : data;
+  const text = (v?.text || "").trim();
+  const reference = v?.book_name ? `${v.book_name} ${v.chapter}:${v.verse}` : v?.reference || "";
+  if (!text || !reference) throw new Error("bible-api missing fields");
+  return { text, reference, translation: "WEB", source: "bible-api" };
+}
+async function fetchRandomVerseFallback() {
+  const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json&order=random");
+  if (!res.ok) throw new Error(`ourmanna status ${res.status}`);
+  const data = await res.json();
+  const text = (data?.verse?.details?.text || "").trim();
+  const reference = data?.verse?.details?.reference || "";
+  if (!text || !reference) throw new Error("ourmanna missing fields");
+  return { text, reference, translation: "KJV/varies", source: "ourmanna" };
+}
+async function fetchServerVerse() {
+  try {
+    return await fetchRandomVersePrimary();
+  } catch {
+    return await fetchRandomVerseFallback();
+  }
+}
+
+/**
+ * GET /api/devotion/today
+ * Returns the single server-chosen verse for the current PH day.
+ */
+app.get("/api/devotion/today", async (_req, res) => {
+  try {
+    const key = dateKeyPH();
+
+    // Find existing verse-of-the-day
+    let doc = await DevotionVerse.findOne({ dateKey: key }).lean();
+    if (!doc) {
+      // Create once for the day
+      const verse = await fetchServerVerse();
+      const saved = await DevotionVerse.create({ dateKey: key, ...verse });
+      doc = saved.toObject();
+    }
+
+    res.json({
+      key: doc.dateKey,
+      text: doc.text,
+      reference: doc.reference,
+      translation: doc.translation,
+      source: doc.source,
+    });
+  } catch (e) {
+    console.error("GET /api/devotion/today error:", e);
+    // Safe fallback so UI still renders something
+    res.json({
+      key: dateKeyPH(),
+      text: "For God so loved the world, that he gave his only begotten Son...",
+      reference: "John 3:16",
+      translation: "KJV",
+      source: "fallback",
+    });
+  }
+});
+
+const DEFAULT_PROMPTS = [
+  "How does Philippians 4:13 resonate with your current life challenges?",
+  "What specific areas of your life do you need Christ’s strength today?",
+  "How can you practically apply this verse to overcome a difficulty this week?",
+  "Consider a time when you felt God’s strength. How can you carry that experience forward?",
+];
+
+const DevotionPromptsSchema = new mongoose.Schema(
+  {
+    dateKey: { type: String, index: true }, // "YYYY-MM-DD" (Asia/Manila)
+    churchRef: { type: mongoose.Schema.Types.ObjectId, ref: "ChurchApplication", index: true },
+    items: { type: [String], default: [] },
+  },
+  { timestamps: true }
+);
+DevotionPromptsSchema.index({ dateKey: 1, churchRef: 1 }, { unique: true });
+const DevotionPrompts = mongoose.model("DevotionPrompts", DevotionPromptsSchema);
+
+function dateKeyPH() {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return fmt.format(new Date());
+}
+
+app.get("/api/devotion/prompts/today", auth, async (req, res) => {
+  try {
+    const { churchId } = req.query;
+    if (!churchId) return res.status(400).json({ message: "Missing churchId" });
+    const key = dateKeyPH();
+
+    const doc = await DevotionPrompt.findOne({ churchRef: churchId, dateKey: key }).lean();
+    res.json({ key, items: doc?.items?.length ? doc.items : DEFAULT_PROMPTS });
+  } catch (e) {
+    console.error("GET prompts error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PUT today prompts (admins only)
+app.put("/api/devotion/prompts/today", auth, async (req, res) => {
+  try {
+    const { churchId, items } = req.body;
+    if (!churchId) return res.status(400).json({ message: "Missing churchId" });
+    if (!Array.isArray(items)) return res.status(400).json({ message: "items must be array" });
+
+    // simple guard: only church-admins can edit
+    if (req.user.role !== "church-admin" && req.user.role !== "superadmin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const key = dateKeyPH();
+    const clean = items.map(s => String(s ?? "").trim()).filter(Boolean);
+    const doc = await DevotionPrompt.findOneAndUpdate(
+      { churchRef: churchId, dateKey: key },
+      { $set: { items: clean } },
+      { new: true, upsert: true }
+    ).lean();
+
+    // push realtime update
+    const io = req.app.get("io");
+    io.to(`church:${churchId}`).emit("devotion:prompts:update", { key, items: doc.items });
+
+    res.json({ key, items: doc.items });
+  } catch (e) {
+    console.error("PUT prompts error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
-
+app.get("/api/church-admin/me/church", auth, async (req, res) => {
+  try {
+    const appDoc = await ChurchApplication.findOne({ email: req.user.email.toLowerCase() }).lean();
+    if (!appDoc) return res.json({ church: null });
+    res.json({ church: { id: String(appDoc._id), name: appDoc.churchName, joinCode: appDoc.joinCode || null }});
+  } catch (e) { res.status(500).json({ message: "Server error" }); }
+});
 start();

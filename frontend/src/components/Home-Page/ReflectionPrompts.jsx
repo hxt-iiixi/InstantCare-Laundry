@@ -1,36 +1,23 @@
 import React from "react";
-import { useReflectionPrompts } from "../../lib/reflectionPrompts"; // adjust path
+import { useReflectionPrompts } from "../../lib/reflectionPrompts";
 
-const ReflectionPrompts = () => {
+export default function ReflectionPrompts() {
   const { prompts } = useReflectionPrompts();
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-md shadow-md mt-16">
-      <h2 className="text-3xl font-semibold text-orange-500 mb-6">Reflection Prompts</h2>
-      <p className="text-lg mb-6">Take a moment to reflect on today’s message.</p>
+      <h2 className="text-3xl font-semibold text-orange-500 mb-2">Reflection Prompts</h2>
+      <p className="text-sm text-slate-600 mb-6">
+        No need to type anything—read each question and reflect quietly.
+      </p>
 
-      <div className="space-y-6">
+      <ol className="space-y-4 list-decimal list-inside">
         {prompts.map((q, i) => (
-          <div key={i}>
-            <label className="block font-semibold text-lg">
-              {i + 1}. {q}
-            </label>
-            <textarea
-              className="w-full mt-2 p-4 border rounded-md"
-              rows="4"
-              placeholder="Write your thoughts here..."
-            />
-          </div>
+          <li key={i} className="text-lg text-slate-800">
+            {q}
+          </li>
         ))}
-      </div>
-
-      <div className="mt-6 text-center">
-        <button className="bg-orange-500 text-white py-2 px-6 rounded-md hover:bg-orange-600">
-          Copy Link
-        </button>
-      </div>
+      </ol>
     </div>
   );
-};
-
-export default ReflectionPrompts;
+}
