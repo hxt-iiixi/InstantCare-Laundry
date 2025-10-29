@@ -1,80 +1,23 @@
-import React, { useEffect, useMemo, useState } from "react";
+// src/pages/church-admin/UserRolesPage.jsx
+import React, { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import SideNav from "../../components/Super-admin/SideNav";
 import AdminSidebar from "../../components/church-admin/AdminSidebar";
 import AdminHeader from "../../components/church-admin/AdminHeader";
+import dayjs from "dayjs";
 
 const UserRolesPage = () => {
   const navigate = useNavigate();
   const [churchAppId, setChurchAppId] = useState(null);
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
-  const rolePermissions = {
-    Moderator: {
-      manageSystemSettings: { 
-        enabled: true,
-        description: "Can manage event and service configurations.",
-      },
-      approveRejectMembers: {
-        enabled: true,
-        description: "Can approve or reject new member requests.",
-      },
-      sendMessages: {
-        enabled: true,
-        description: "Can send messages to all members.",
-      },
-      manageEvents: {
-        enabled: true,
-        description: "Can create, edit, or announce church events.",
-      },
-    },
 
-    Parishoner: {
-      viewEvents: {
-        enabled: true,
-        description: "Can view upcoming and past church events.",
-      },
-      viewAnnouncements: {
-        enabled: true,
-        description: "Can read church announcements and updates.",
-      },
-      viewDevotions: {
-        enabled: true,
-        description: "Can view daily devotions and prayer reflections.",
-      },
-    },
-  };
-
-  // === Default Role State ===
-  const [roleName, setRoleName] = useState("Parishoner");
-  const [roleDescription, setRoleDescription] = useState(
-    "Basic user with access to general church services and updates."
-  );
-  const [permissions, setPermissions] = useState(rolePermissions["Parishoner"]);
-
-  // === Handle Role Change ===
-  const handleRoleChange = (value) => {
-    setRoleName(value);
-
-    if (value === "Parishoner") {
-      setRoleDescription(
-        "Basic user with access to general church services and updates."
-      );
-    } else if (value === "Moderator") {
-      setRoleDescription("Can assist in managing members and church content.");
-    }
-
-    setPermissions(rolePermissions[value]);
-  };
-
-  const handleSaveChanges = () => {
-    console.log("Changes saved for role:", roleName);
-  };
-   const ensureChurchId = async () => {
+  const ensureChurchId = async () => {
     if (churchAppId) return churchAppId;
-    const { data } = await api.get("/api/church-admin/me/church");
+    const token = localStorage.getItem("token");
+    const { data } = await api.get("/api/church-admin/me/church", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     const id = data?.church?.id || null;
     setChurchAppId(id);
     return id;
@@ -86,10 +29,13 @@ const UserRolesPage = () => {
       const id = await ensureChurchId();
       if (!id) {
         setMembers([]);
-        setLoadingMembers(false);
         return;
       }
-      const { data } = await api.get("/api/church-admin/members", { params: { churchId: id } });
+      const token = localStorage.getItem("token");
+      const { data } = await api.get("/api/church-admin/members", {
+        params: { churchId: id },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       setMembers(data?.users || []);
     } finally {
       setLoadingMembers(false);
@@ -99,61 +45,116 @@ const UserRolesPage = () => {
   useEffect(() => {
     loadMembers();
   }, []);
-  // === Role cards (only Moderator and Parishoner) ===
- const moderatorCount = 0; // (add later if you’ll have real “moderator” users)
-const parishionerCount = members.length;
 
-const roles = [
-  { name: "Moderator", users: moderatorCount },
-  { name: "Parishoner", users: parishionerCount },
-];
-  // === Parishioner Data (Sample) ===
-  const parishioners = [
-    { id: 1, name: "John Smith", role: "Parishioner" },
-    { id: 2, name: "Sarah Johnson", role: "Parishioner" },
-    { id: 3, name: "Michael Brown", role: "Parishioner" },
-    { id: 4, name: "Emily Davis", role: "Parishioner" },
-    { id: 5, name: "David Lee", role: "Parishioner" },
-    { id: 6, name: "John Smith", role: "Parishioner" },
-    { id: 7, name: "Sarah Johnson", role: "Parishioner" },
-    { id: 8, name: "Michael Brown", role: "Parishioner" },
-    { id: 9, name: "Emily Davis", role: "Parishioner" },
-    { id: 10, name: "David Lee", role: "Parishioner" },
-    { id: 11, name: "John Smith", role: "Parishioner" },
-    { id: 12, name: "Sarah Johnson", role: "Parishioner" },
-    { id: 13, name: "Michael Brown", role: "Parishioner" },
-    { id: 14, name: "Emily Davis", role: "Parishioner" },
-    { id: 15, name: "David Lee", role: "Parishioner" },
-  ];
-const churchName = localStorage.getItem("churchName")
+  const churchName = localStorage.getItem("churchName") || "Your Church";
+
+  // --- PRINT ---
+  const escapeHtml = (s = "") =>
+    String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+
+ const handlePrint = () => {
+  const nowStr = dayjs().format("MMMM D, YYYY h:mm A");
+
+  const rows = members.map((m, i) => {
+    const name = (m.name || m.username || m.email || "—")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    const email = (m.email || "—")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    return `<tr><td>${i + 1}</td><td>${name}</td><td>${email}</td></tr>`;
+  }).join("");
+
+  const html = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>${(churchName || "Your Church").replaceAll("<","&lt;")}</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:28px;color:#111827}
+  h1{margin:0 0 4px;font-size:22px}.sub{color:#6b7280;margin-bottom:18px}
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid #e5e7eb;padding:10px 12px;font-size:13px;text-align:left}
+  th{background:#f9fafb;font-weight:600}
+  tfoot td{border:none;padding-top:14px;color:#6b7280;font-size:12px}
+  @page{margin:14mm}
+</style>
+</head>
+<body>
+  <h1>${(churchName || "Your Church").replaceAll("<","&lt;")} — Parishioners</h1>
+  <div class="sub">Printed ${nowStr} • Total: ${members.length}</div>
+  <table>
+    <thead><tr><th style="width:60px">#</th><th>Name</th><th>Email</th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="3">No members yet.</td></tr>`}</tbody>
+    <tfoot><tr><td colspan="4">Generated by Ampower Admin</td></tr></tfoot>
+  </table>
+</body>
+</html>`;
+
+  // Primary: Blob URL in a new tab, then print on load
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank"); // NOTE: no 'noopener,noreferrer'
+
+  if (win) {
+    // Auto print when the new document finishes loading
+    const revoke = () => setTimeout(() => URL.revokeObjectURL(url), 1500);
+    win.addEventListener("load", () => { try { win.focus(); win.print(); } catch {} revoke(); });
+  } else {
+    // Fallback: hidden iframe + srcdoc
+    const ifr = document.createElement("iframe");
+    Object.assign(ifr.style, { position:"fixed", right:"0", bottom:"0", width:"0", height:"0", border:"0" });
+    ifr.srcdoc = html;
+    ifr.onload = () => {
+      try { ifr.contentWindow.focus(); ifr.contentWindow.print(); } catch {}
+      setTimeout(() => document.body.removeChild(ifr), 1500);
+    };
+    document.body.appendChild(ifr);
+  }
+};
+
+
+  // --- UI ---
   return (
-   <div className="min-h-screen bg-[#FBF7F3]">
-        <AdminSidebar />
-        <AdminHeader className="pl-[232px]" />
-      <div className="flex-1 bg-white p-8 ml-64">
-      
-        <div className="container mx-auto p-6">
-          {/* === Parishioners Section === */}
-          <div className="mb-12">
+    <div className="min-h-screen bg-[#FBF7F3]">
+      <AdminSidebar />
+      <AdminHeader className="pl-[232px]" />
+      <div className="pl-[232px] pt-[64px]">
+        <div className="max-w-7xl mx-auto w-full px-6 py-6">
+          {/* Header + Print */}
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold text-gray-800">
-             {churchName}{" "}
-              <span className="font-[cursive] text-black">
-                Parishioners/Members
-              </span>
+              {churchName} <span className="font-[cursive] text-black">Parishioners/Members</span>
             </h2>
+            <button
+              onClick={handlePrint}
+              disabled={loadingMembers}
+              className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium
+                ${loadingMembers ? "bg-slate-300 text-white cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600 text-white"}
+              `}
+              title="Print member list"
+            >
+              {/* Printer icon */}
+              <svg width="16" height="16" viewBox="0 0 24 24" className="opacity-90">
+                <path fill="currentColor" d="M6 9V3h12v6H6Zm2-2h8V5H8v2Zm-4 6v6h4v-3h8v3h4v-6H4Zm14-2a2 2 0 1 1 0 4a2 2 0 0 1 0-4Z"/>
+              </svg>
+              Print Members
+            </button>
+          </div>
 
-           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {loadingMembers && (
-                <div className="col-span-full text-sm text-gray-500">Loading members…</div>
-              )}
-
-              {!loadingMembers && members.length === 0 && (
-                <div className="col-span-full text-sm text-gray-500">
-                  No members have joined with this church code yet.
-                </div>
-              )}
-
-              {!loadingMembers && members.map((m) => (
+          {/* Members grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loadingMembers && (
+              <div className="col-span-full text-sm text-gray-500">Loading members…</div>
+            )}
+            {!loadingMembers && members.length === 0 && (
+              <div className="col-span-full text-sm text-gray-500">
+                No members have joined with this church code yet.
+              </div>
+            )}
+            {!loadingMembers &&
+              members.map((m) => (
                 <div
                   key={m._id}
                   className="flex items-center space-x-3 bg-white rounded-md border border-gray-200 shadow-sm p-3"
@@ -163,8 +164,8 @@ const churchName = localStorage.getItem("churchName")
                     alt={m.name || m.username || "Member"}
                     className="w-10 h-10 rounded-full object-cover bg-gray-200"
                   />
-                  <div>
-                    <p className="font-medium text-gray-900">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 truncate">
                       {m.name || m.username || m.email}
                     </p>
                     <span className="text-sm text-gray-600 bg-gray-100 rounded-full px-3 py-1">
@@ -172,12 +173,8 @@ const churchName = localStorage.getItem("churchName")
                     </span>
                   </div>
                 </div>
-                ))}
-            </div>
+              ))}
           </div>
-
-         
-          
         </div>
       </div>
     </div>
