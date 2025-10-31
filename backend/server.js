@@ -14,7 +14,7 @@ import eventRoutes from "./routes/eventRoutes.js";
 import path from "path";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
-
+import ministryRoutes from "./routes/ministryRoutes.js";
 import multer from "multer";
 
 
@@ -38,7 +38,7 @@ app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 app.use("/api/church-admin", churchAdminRoutes); 
 app.use("/api/events", eventRoutes);
-
+app.use("/api/ministries", ministryRoutes);
 const ServiceSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
@@ -177,6 +177,8 @@ async function seedSuperAdmin() {
     console.log("✅ Super admin ensured:", email);
   }
 }
+
+
 app.get("/", (_req, res) => res.send("Welcome to InstantCare Laundry API!"));
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
@@ -370,7 +372,31 @@ app.get("/api/church-admin/applications/:id", auth, async (req, res) => {
     }
   });
 });
+app.post("/api/church-admin/applications/:id/join-code", auth, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const appDoc = await ChurchApplication.findById(id);
+    if (!appDoc) return res.status(404).json({ message: "Church not found" });
 
+    // permission: only superadmin or that church's admin
+    if (req.user.role !== "church-admin") {
+      const mine = await ChurchApplication.findOne({ email: req.user.email.toLowerCase() }).lean();
+      if (!mine || String(mine._id) !== String(id)) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+    }
+
+    if (!appDoc.joinCode) {
+      appDoc.joinCode = Math.random().toString(36).slice(2, 8).toUpperCase(); // 6 chars
+      await appDoc.save();
+    }
+
+    res.json({ joinCode: appDoc.joinCode });
+  } catch (e) {
+    console.error("POST /join-code error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 // Update church profile (text fields)
 app.patch("/api/church-admin/applications/:id/profile", auth, async (req, res) => {
   const allowed = ["churchName","city","province","address","contactNumber","bio","avatar","cover"];

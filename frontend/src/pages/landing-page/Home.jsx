@@ -13,7 +13,6 @@ export default function Home() {
         <Hero />
         <FeatureCards />
         <DevotionBanner />
-        <UpcomingEvents />
         <LeadershipTeam />
         <ChurchInfoFooter />
 

@@ -56,6 +56,11 @@ export default function AdminSidebar() {
           <img src="/src/assets/icons/user.svg" alt="AmPower" className="h-[20px] w-[20px]" />
           Users
         </NavLink>
+        
+        <NavLink to="/Ministries" className={({ isActive }) => `${itemBase} ${isActive ? active : idle}`}>
+          <img src="/src/assets/icons/user.svg" alt="AmPower" className="h-[20px] w-[20px]" />
+          Ministries
+        </NavLink>
       </nav>
 
       <div className="absolute bottom-0 inset-x-0 px-4 pb-4">

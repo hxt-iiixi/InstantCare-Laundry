@@ -75,12 +75,16 @@ export default function AdminDashboard() {
   const [members, setMembers] = useState([]);
 
   const ensureChurchId = async () => {
-    if (churchAppId) return churchAppId;
-    const { data } = await api.get("/api/church-admin/mine", authHeaders());
+  const { data } = await api.get("/api/church-admin/mine", authHeaders());
+  if (data?.id) {
     localStorage.setItem("churchAppId", data.id);
-    setChurchAppId(data.id);
+    if (churchAppId !== data.id) setChurchAppId(data.id);
     return data.id;
-  };
+  }
+  localStorage.removeItem("churchAppId");
+  setChurchAppId(null);
+  return null;
+};
 
   const loadStats = async () => {
     const id = await ensureChurchId();
@@ -111,7 +115,7 @@ export default function AdminDashboard() {
   const handleGenerateCode = async () => {
     if (stats.joinCode) return;
     const id = await ensureChurchId();
-    await api.post(`/api/church-admin/applications/${id}/join-code`, null, authHeaders());
+    await api.post(`/api/church-admin/applications/${id}/join-code`, {}, authHeaders());
     await loadStats();
   };
 

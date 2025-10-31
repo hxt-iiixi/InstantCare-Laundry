@@ -20,6 +20,7 @@ import RoleSelectPage from "/src/pages/auth/RoleSelectPage.jsx";
 import Calendar from "./pages/church-admin/Calendar.jsx";
 import ChurchDash from "./pages/church-admin/AdminDashboard.jsx";
 import ChurchProfile from "./pages/church-admin/ChurchProfile.jsx";
+import Ministries from "./pages/church-admin/Ministries.jsx";
 import ParishEngagement from "./pages/church-admin/ParishEngagement.jsx";
 import Userroles from "./pages/church-admin/UserRoles.jsx";
 import Contact from './pages/landing-page/Contacts.jsx';
@@ -76,8 +77,9 @@ export default function App() {
       <Route path="/userroles" element={ <ProtectedRoute roles={["church-admin"]} element={<Userroles />} /> } />
       <Route path="/Cprofile" element={ <ProtectedRoute roles={["church-admin"]} element={<ChurchProfile />} /> } />
       <Route path="/ParishEngagement" element={ <ProtectedRoute roles={["church-admin"]} element={<ParishEngagement />} /> } />
+      <Route path="/Ministries" element={ <ProtectedRoute roles={["church-admin"]} element={<Ministries />} /> } />
      
-
+    
       {/* Member only */}
       <Route path="/memberdash" element={ <ProtectedRoute roles={["member"]} element={<Memberdash />} /> } />
       <Route path="/profile" element={ <ProtectedRoute roles={["member"]} element={<MemberProfile />} /> } />
