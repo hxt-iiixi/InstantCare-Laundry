@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import track1 from "/src/assets/music/Dream Aria Genshin Impact NighttimeEvening Title Screen Main Menu BGM OST EXTENDED.mp3";
-import track2 from "/src/assets/music/bassilyo-lord-patawad_q4GE6g1Y.mp3";
-import track3 from "/src/assets/music/bassilyo-lord-patawad_q4GE6g1Y.mp3";
+import track2 from "/src/assets/music/Adonai - Hillsong Worship(MP3_128k).mp3";
 
 
 import SoundOnIcon from "/src/assets/icons/volume.png";
