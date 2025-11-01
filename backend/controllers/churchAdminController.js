@@ -7,16 +7,34 @@ import { sendOTPEmail } from "../utils/mailer.js";
 
 export const registerChurchAdmin = async (req, res) => {
   try {
-    const { churchName, address, email, contactNumber } = req.body;
+    const {
+      churchName,
+      address,
+      email,
+      contactNumber,
+      password,
+      confirmPassword,
+    } = req.body;
+
     if (!churchName || !address || !email || !contactNumber) {
       return res.status(400).json({ message: "All fields are required." });
     }
     if (!req.file) {
       return res.status(400).json({ message: "Church certificate is required." });
     }
+    if (!password || !confirmPassword) {
+      return res.status(400).json({ message: "Password and confirmation are required." });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters." });
+    }
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match." });
+    }
 
     const normalizedEmail = email.toLowerCase().trim();
-      const tempPass = crypto.randomBytes(6).toString("hex");
+
+    // prevent duplicate pending/approved apps
     const existingApp = await ChurchApplication.findOne({
       email: normalizedEmail,
       status: { $in: ["pending", "approved"] },
@@ -25,7 +43,7 @@ export const registerChurchAdmin = async (req, res) => {
       return res.status(400).json({ message: "An application with this email already exists." });
     }
 
-    // 1) store the application
+    // store application (note: saved path uses /uploads/certificates)
     const appDoc = await ChurchApplication.create({
       churchName,
       address,
@@ -35,10 +53,12 @@ export const registerChurchAdmin = async (req, res) => {
       status: "pending",
     });
 
-    // 2) upsert a User with reg OTP (so verify/resend will find it)
+    // issue OTP for email verification
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = new Date(Date.now() + 10 * 60 * 1000);
 
+    // upsert user with hashed password
+    const hash = await bcrypt.hash(password, 12);
     let user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
@@ -46,34 +66,35 @@ export const registerChurchAdmin = async (req, res) => {
         email: normalizedEmail,
         username: churchName,
         name: churchName,
-
+        password: hash,          // ⬅️ store password
         role: "church-admin",
         isVerified: false,
         regOTP: otp,
         regOTPExpiry: expiry,
       });
     } else {
-
+      // if user exists (e.g., Google-linked), set role + set password if missing
       if (!["admin", "superadmin"].includes(user.role)) {
         user.role = "church-admin";
       }
+      if (!user.password) user.password = hash; // don't overwrite an existing password
       user.isVerified = false;
       user.regOTP = otp;
       user.regOTPExpiry = expiry;
       await user.save();
     }
 
-
     try {
       await sendOTPEmail(normalizedEmail, `Your AmPower verification code is: ${otp}`);
     } catch (e) {
       console.warn("Failed to send registration OTP:", e.message);
-  
+      // continue; user can request resend
     }
 
-    return res
-      .status(201)
-      .json({ message: "Application submitted. A verification code was sent to your email.", id: appDoc._id });
+    return res.status(201).json({
+      message: "Application submitted. A verification code was sent to your email.",
+      id: appDoc._id,
+    });
   } catch (err) {
     console.error("registerChurchAdmin:", err);
     res.status(500).json({ message: "Server error" });
@@ -109,19 +130,23 @@ export const getApplication = async (req, res) => {
 };
 
 
+function generateTempPassword(len = 8) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  return Array.from({ length: len }, () => alphabet[crypto.randomInt(alphabet.length)]).join("");
+}
+
 export const approveApplication = async (req, res) => {
   const app = await ChurchApplication.findById(req.params.id);
   if (!app) return res.status(404).json({ message: "Not found" });
   if (app.status === "approved") return res.json({ message: "Already approved." });
 
-
   let user = await User.findOne({ email: app.email.toLowerCase() });
   if (user) {
+    // ensure role but DO NOT overwrite an existing password
     user.role = "church-admin";
     await user.save();
   } else {
-
-    const tempPass = crypto.randomBytes(6).toString("12345678"); 
+    const tempPass = generateTempPassword(10);
     const hash = await bcrypt.hash(tempPass, 12);
     user = await User.create({
       email: app.email.toLowerCase(),
@@ -130,15 +155,12 @@ export const approveApplication = async (req, res) => {
       password: hash,
       role: "church-admin",
     });
-
-
     try {
-      await sendOTPEmail(app.email, `Your temporary password: ${tempPass}\nPlease log in and change it.`); 
+      await sendOTPEmail(app.email, `Your temporary password: ${tempPass}\nPlease log in and change it.`);
     } catch (e) {
       console.warn("Email send failed (temp pass):", e.message);
     }
   }
-
 
   app.status = "approved";
   app.notes = (req.body?.notes || "").trim();

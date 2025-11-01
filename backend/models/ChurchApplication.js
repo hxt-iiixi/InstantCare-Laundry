@@ -1,3 +1,6 @@
+
+
+//ChurchApplication.js
 import mongoose from "mongoose";
 
 const churchApplicationSchema = new mongoose.Schema(

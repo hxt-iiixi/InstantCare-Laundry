@@ -18,6 +18,7 @@ import iconLock from "/src/assets/icons/Lock.png";
 import LeadershipTeam from "../../components/Home-Page/LeadershipTeam.jsx";
 import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter.jsx";
 import Navbar from "../../components/Navbar";
+import GoogleButton from "../../components/GoogleButton.jsx";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ const LoginPage = () => {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
+  const [showLoginPass, setShowLoginPass] = useState(false);
 
   // Toast if redirected from register
   useEffect(() => {
@@ -49,6 +51,24 @@ const LoginPage = () => {
     if (data?.user?.name) localStorage.setItem("name", data.user.name);  // Save user name
     if (data?.user?.churchName) localStorage.setItem("churchName", data.user.churchName);  // Save church name for church admins
     if (data?.user?.username) localStorage.setItem("username", data.user.username);
+    // 👇 NEW: persist churchName when present
+      if (data?.user?.churchName) {
+        localStorage.setItem("churchName", data.user.churchName);
+        window.dispatchEvent(new CustomEvent("churchName:update", { detail: data.user.churchName }));
+      } 
+      // 👇 Fallback: if role is church-admin but churchName missing, fetch it
+      else if (data?.user?.role === "church-admin") {
+        try {
+          const resp = await api.get("/api/church-admin/me/church", {
+            headers: { Authorization: `Bearer ${data.token}` },
+          });
+          const name = resp?.data?.church?.name;
+          if (name) {
+            localStorage.setItem("churchName", name);
+            window.dispatchEvent(new CustomEvent("churchName:update", { detail: name }));
+          }
+        } catch {}
+      }
     window.dispatchEvent(new Event("auth:update"));
     // Route by role
     const dest = getDefaultRouteByRole(data?.user?.role);
@@ -145,24 +165,43 @@ const LoginPage = () => {
                     </div>
                   </label>
 
-                  {/* Password */}
-                  <label className="block">
-                    <span className="block text-xs font-medium text-gray-600 mb-1">Password</span>
-                    <div className="relative">
-                      <img
-                        src={iconLock}
-                        alt=""
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60"
-                      />
-                      <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-md border border-gray-300 pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C52] focus:border-transparent"
-                      />
-                    </div>
-                  </label>
+                 <label className="block">
+                  <span className="block text-xs font-medium text-gray-600 mb-1">Password</span>
+                  <div className="relative">
+                    <img
+                      src={iconLock}
+                      alt=""
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60"
+                    />
+                    <input
+                      type={showLoginPass ? "text" : "password"}
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full rounded-md border border-gray-300 pl-9 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C52] focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPass((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
+                      aria-label={showLoginPass ? "Hide password" : "Show password"}
+                    >
+                      {showLoginPass ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                          <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2"/>
+                          <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+                          <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2"/>
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                          <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2"/>
+                          <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </label>
+
 
                   {error && <p className="text-red-500 text-center text-sm">{error}</p>}
 
@@ -199,53 +238,7 @@ const LoginPage = () => {
                 </div>
 
                 <div className="w-full">
-                  <GoogleLogin
-                    onSuccess={async (res) => {
-                      try {
-                        const credential = res?.credential;
-                        const { data } = await api.post("/api/auth/google/login", { credential });
-
-                        // Save token + role
-                        localStorage.setItem("token", data.token);
-                        
-                        if (data?.user?.role) localStorage.setItem("role", data.user.role);
-                        if (data?.user?.name) localStorage.setItem("name", data.user.name);  
-                        if (data?.user?.email) localStorage.setItem("prefillEmail", data.user.email);
-                        if (data?.user?.username) localStorage.setItem("username", data.user.username);
-                          if (data?.user?.avatar) localStorage.setItem("avatar", data.user.avatar);
-                          window.dispatchEvent(new Event("auth:update"));
-                        toast.success("Welcome back!");
-                        const dest = getDefaultRouteByRole(data?.user?.role);
-                        navigate(dest, { replace: true });
-                      } catch (e) {
-                        const status = e?.response?.status;
-                        const code = e?.response?.data?.code;
-                        const msg = e?.response?.data?.message;
-
-                        if (status === 403 && code === "UNDER_REVIEW") {
-                          toast.info(
-                            "Your church admin application is under review. We’ll email you once it’s approved."
-                          );
-                          return;
-                        }
-                        if (status === 404) {
-                          toast.error("No account found for this Google email. Please register first.");
-                          navigate("/register", { replace: true });
-                          return;
-                        }
-                        if (status === 401) {
-                          toast.error("Google sign-in failed. Check OAuth Client ID and authorized origins.");
-                          return;
-                        }
-                        toast.error(msg || "Google sign-in failed.");
-                      }
-                    }}
-                    onError={() => toast.error("Google sign-in cancelled")}
-                    ux_mode="popup"
-                    text="continue_with"
-                    shape="pill"
-                    size="large"
-                  />
+                  <GoogleButton />
                 </div>
 
                 <p className="text-center mt-4 text-sm">

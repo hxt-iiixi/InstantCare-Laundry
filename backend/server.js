@@ -1,3 +1,4 @@
+//Server.js
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -16,6 +17,7 @@ import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import ministryRoutes from "./routes/ministryRoutes.js";
 import multer from "multer";
+import { Server } from "lucide-react";
 
 
 
@@ -588,11 +590,26 @@ app.post("/api/auth/google", async (req, res) => {
     await ensureChurchAdminApproved(user);
 
     const token = signToken(user);
-    return res.json({
-      token,
-      user: { username: user.username || user.name, email: user.email, name: user.name, avatar: user.avatar,   role: user.role,    },
-      needsPassword: !user.password,
-    });
+    let churchName = null;
+      if (user.role === "church-admin") {
+        const appDoc = await ChurchApplication
+          .findOne({ email: user.email.toLowerCase() })
+          .lean();
+        churchName = appDoc?.churchName || user.name || user.username || null;
+      }
+
+      return res.json({
+        token,
+        user: {
+          username: user.username || user.name,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+          role: user.role,
+          churchName,      // 👈 add this
+        },
+        needsPassword: !user.password,
+      });
   } catch (err) {
     if (err.code === "UNDER_REVIEW") {
       return res.status(403).json({ message: err.message, code: err.code });
@@ -623,7 +640,7 @@ app.post("/api/set-password", auth, async (req, res) => {
   }
 });
 
-// LOGIN-ONLY with Google 
+
 app.post("/api/auth/google/login", async (req, res) => {
   try {
     const { credential } = req.body;
@@ -652,20 +669,35 @@ app.post("/api/auth/google/login", async (req, res) => {
       await user.save();
     }
 
-    // ✅ block pending admins
+    // block pending church-admins
     await ensureChurchAdminApproved(user);
+
+   let churchName = null;
+    if (user.role === "church-admin") {
+      const appDoc = await ChurchApplication
+        .findOne({ email: user.email.toLowerCase() })
+        .lean();
+      churchName = appDoc?.churchName || user.name || user.username || null;
+    }
 
     const token = signToken(user);
     return res.json({
       token,
-      user: { username: user.username || user.name, email: user.email, name: user.name, avatar: user.avatar },
+      user: {
+        id: user._id,
+        username: user.username || user.name,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        role: user.role,
+        isVerified: user.isVerified,
+        churchName, // 👈 now provided like manual login
+      },
     });
   } catch (err) {
-    // If our guard threw:
     if (err.code === "UNDER_REVIEW") {
       return res.status(403).json({ message: err.message, code: err.code });
     }
-    // Otherwise it's a token/audience/origin issue etc.
     console.error("Google login-only error:", err?.message || err);
     return res.status(401).json({ message: "Google sign-in failed." });
   }
