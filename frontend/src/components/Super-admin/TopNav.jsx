@@ -3,7 +3,6 @@ import { NavLink } from "react-router-dom";
 
 const SEARCH = "/src/assets/icons/Search.svg";
 import ampowerLogo from "/src/assets/icons/ampower.svg";
-import test from "/src/assets/images/jc.jpg";
 
 const TopNav = () => {
   return (

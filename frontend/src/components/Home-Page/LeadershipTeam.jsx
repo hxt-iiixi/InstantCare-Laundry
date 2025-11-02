@@ -3,11 +3,11 @@ import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import PANEL_BG from "/src/assets/images/Rectangle 31.png";
 
 const people = [
-  { photo: "/src/assets/images/people/pastor.png", lines: ["John","Christopher","Raguindin"], role: ["Project","Manager"] },
-  { photo: "/src/assets/images/people/sarah.png",  lines: ["Ken","Camagay"],       role: ["Full-stack","Developer"] },
-  { photo: "/src/assets/images/people/emily.png",  lines: ["Daniel","Cariaso"],      role: ["Database","Manager"] },
-  { photo: "/src/assets/images/people/mark.png",   lines: ["Charls","Dar"],  role: ["Frontend","Developer"] },
-  { photo: "/src/assets/images/people/sarah2.png", lines: ["April","Bravo"],       role: ["UI/UX","Designer"] },
+  { photo: "/src/assets/image/JC.jpg", lines: ["John","Christopher","Raguindin"], role: ["Project","Manager"] },
+  { photo: "/src/assets/image/KEN.jpg",  lines: ["Ken","Camagay"],       role: ["Full-stack","Developer"] },
+  { photo: "/src/assets/image/DANIEL.jpg",  lines: ["Daniel","Cariaso"],      role: ["Database","Manager"] },
+  { photo: "/src/assets/image/CHARLS.jpg",   lines: ["Charls","Dar"],  role: ["Frontend","Developer"] },
+  { photo: "/src/assets/image/AVRIL.jpg", lines: ["April","Bravo"],       role: ["UI/UX","Designer"] },
 ];
 
 export default function LeadershipTeam() {
