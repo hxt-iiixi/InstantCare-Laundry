@@ -27,7 +27,7 @@ const SideNav = () => {
     <aside className="fixed left-0 top-16 w-64 h-[calc(100vh-64px)] bg-white text-zinc-900 shadow-lg flex flex-col">
       {/* Top: title + links */}
       <div className="p-6">
-        <h2 className="text-xl font-semibold mb-8">Dashboard</h2>
+        <h2 className="text-xl font-semibold mb-8 mt-8">Dashboard</h2>
         <nav>
           <ul>
             <li className="mb-4">
