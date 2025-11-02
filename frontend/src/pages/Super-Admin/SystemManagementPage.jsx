@@ -83,18 +83,13 @@ export default function SystemManagementPage() {
             <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-semibold text-zinc-900">Manage Announcements</h2>
-                <button className="bg-orange-500 text-white py-2 px-6 rounded-md hover:bg-orange-600" onClick={() => toast.info("New Announcement coming soon!")}>+ New Announcement</button>
+                
               </div>
 
               <div className="mt-6 space-y-4">
                 <div className="space-y-2">
                   <label className="font-semibold">Announcement Content</label>
                   <textarea className="w-full p-4 border rounded-md" rows="5" value={announcementContent} onChange={(e) => setAnnouncementContent(e.target.value)} placeholder="Share important news, updates, or events..." />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="font-semibold">Target Audience</label>
-                  <input className="w-full p-4 border rounded-md" type="text" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} placeholder="e.g., All Church Admins, Specific Regional Admins" />
                 </div>
 
                 <div className="flex gap-3">

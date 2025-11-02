@@ -61,14 +61,8 @@ export default function AdminHeader({ className = "" }) {
         <h1 className="text-2xl font-bold text-slate-800 text-center">{title}</h1>
 
         <div className="flex items-center justify-end gap-3">
-          <span className="text-sm text-slate-600">{churchName}</span> {/* Dynamically display church name */}
-          <Link to="/Cprofile" className="inline-block">
-            <img
-              src="/src/assets/images/profile.png"
-              alt="Profile"
-              className="h-9 w-9 rounded-full object-cover cursor-pointer hover:opacity-90"
-            />
-          </Link>
+  
+        
         </div>
       </div>
     </header>

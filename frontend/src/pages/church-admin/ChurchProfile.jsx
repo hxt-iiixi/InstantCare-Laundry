@@ -153,13 +153,8 @@ const onCover = async (e) => {
                 <div className="text-2xl md:text-[26px] font-semibold text-orange-600">
                   {churchName || "—"}
                 </div>
-                <div className="text-slate-500">Admin Church</div>
+                <div className="text-slate-500">Church Admin </div>
                <div className="mt-1 flex items-center gap-1.5 text-slate-500">
-                <svg width="16" height="16" viewBox="0 0 24 24" className="opacity-80">
-                  <path fill="currentColor"
-                    d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/>
-                </svg>
-                <span>{churchLocation || "—"}</span>
               </div>
               </div>
 
@@ -195,23 +190,6 @@ const onCover = async (e) => {
                       : "bg-white border-zinc-200"
                   }`}
                   placeholder="e.g., St. Joseph Parish"
-                />
-              </div>
-
-              {/* Church Location */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Church Location</label>
-                <input
-                  type="text"
-                  value={churchLocation}
-                  onChange={(e) => setChurchLocation(e.target.value)}
-                  disabled={!isEditing}
-                  className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${
-                    isEditing
-                      ? "border-zinc-300 bg-white focus:outline-none focus:ring-2 focus:ring-orange-300"
-                      : "bg-white border-zinc-200"
-                  }`}
-                  placeholder="City, Province"
                 />
               </div>
 

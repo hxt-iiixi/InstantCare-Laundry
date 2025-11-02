@@ -188,15 +188,6 @@ export default function AccountControlPage() {
                   <option value="pending">Pending</option>
                   <option value="rejected">Rejected</option>
                 </select>
-
-                <div className="flex items-center gap-2 md:ml-auto">
-                  <ToolbarBtn kind="reject" onClick={rejectAll}>
-                    Reject All
-                  </ToolbarBtn>
-                  <ToolbarBtn kind="approve" onClick={approveAll}>
-                    Approve All
-                  </ToolbarBtn>
-                </div>
               </div>
 
               {/* Table */}
