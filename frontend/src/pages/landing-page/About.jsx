@@ -31,23 +31,23 @@ export default function About() {
   const copies = [
     {
       title: "Rooted in Faith, Growing in Love",
-      p1: "Top copy: Our church is built on a strong foundation of faith, grounded in God’s Word and guided by His Spirit. For generations, we have been a place where hearts are renewed, families are strengthened, and lives are transformed through the love of Christ.",
-      p2: "Top copy: We honor the heritage of our faith, cherishing traditions that remind us of God’s goodness through the years, while embracing the modern call to reach out and serve our community."
+      p1: "Our church is built on a strong foundation of faith, grounded in God’s Word and guided by His Spirit. For generations, we have been a place where hearts are renewed, families are strengthened, and lives are transformed through the love of Christ.",
+      p2: "We honor the heritage of our faith, cherishing traditions that remind us of God’s goodness through the years, while embracing the modern call to reach out and serve our community."
     },
     {
-      title: "Rooted in Faith, Growing in Love",
-      p1: "Left (featured) copy: Our church is built on a strong foundation of faith, grounded in God’s Word and guided by His Spirit. For generations, we have been a place where hearts are renewed, families are strengthened, and lives are transformed through the love of Christ.",
-      p2: "Left (featured) copy: We honor the heritage of our faith, cherishing the traditions that remind us of God’s goodness through the years, while embracing the modern call to reach out and serve our community."
+      title: "Anchored in Grace, Serving with Joy",
+      p1: "Our congregation stands firm on the unwavering grace of Jesus Christ, embracing His mercy and extending it to all. We are a community that celebrates life through heartfelt worship, compassionate service, and joyful fellowship that uplifts every soul.",
+      p2: "With humility and dedication, we walk together in faith, welcoming every individual to experience God’s healing power and abundant blessings in their daily lives."
     },
     {
-      title: "Rooted in Faith, Growing in Love",
-      p1: "Right copy: Our church is built on a strong foundation of faith, grounded in God’s Word and guided by His Spirit. For generations, we have been a place where hearts are renewed, families are strengthened, and lives are transformed through the love of Christ.",
-      p2: "Right copy: We honor the heritage of our faith, cherishing the traditions that remind us of God’s goodness through the years, while embracing the modern call to reach out and serve our community."
+      title: "United in Hope, Living in Truth",
+      p1: "Guided by the eternal truth of Scripture, our church unites believers of all ages to live out God’s promises. We inspire each other to grow spiritually, nurturing hope amid life’s challenges by standing on the rock-solid foundation of Christ.",
+      p2: "We strive to reflect His light by sharing the Gospel with kindness and integrity, becoming a beacon of hope in our neighborhood and beyond."
     },
     {
-      title: "Rooted in Faith, Growing in Love",
-      p1: "Bottom copy: Our church is built on a strong foundation of faith, grounded in God’s Word and guided by His Spirit. For generations, we have been a place where hearts are renewed, families are strengthened, and lives are transformed through the love of Christ.",
-      p2: "Bottom copy: We honor the heritage of our faith, cherishing the traditions that remind us of God’s goodness through the years, while embracing the modern call to reach out and serve our community."
+      title: "Welcoming All, Growing in Spirit",
+      p1: "Our doors are open to everyone seeking God’s love and community. We nurture spiritual growth through prayer, Scripture, and fellowship, empowering individuals to discover their purpose in Christ.",
+      p2: "Together, we cultivate an environment of acceptance and encouragement, where faith blossoms and hearts are transformed by the power of the Holy Spirit."
     }
   ];
 
