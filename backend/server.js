@@ -976,6 +976,30 @@ app.get("/api/church-admin/applications/:id/stats", auth, async (req, res) => {
 });
 
 
+app.get("/api/churches", auth, async (_req, res) => {
+  try {
+    const docs = await ChurchApplication.find({ status: "approved" })
+      .select("_id churchName city province address email avatar cover joinCode")
+      .sort({ churchName: 1 })
+      .lean();
 
+    res.json({
+      churches: docs.map((d) => ({
+        id: String(d._id),
+        churchName: d.churchName || "",
+        city: d.city || "",
+        province: d.province || "",
+        address: d.address || "",
+        email: d.email || "",
+        avatar: d.avatar || "",
+        cover: d.cover || "",
+        joinCode: d.joinCode || null,
+      })),
+    });
+  } catch (e) {
+    console.error("GET /api/churches error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 start();

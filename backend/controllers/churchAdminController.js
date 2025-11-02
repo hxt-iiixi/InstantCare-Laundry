@@ -43,7 +43,7 @@ export const registerChurchAdmin = async (req, res) => {
       return res.status(400).json({ message: "An application with this email already exists." });
     }
 
-    // store application (note: saved path uses /uploads/certificates)
+    // store application
     const appDoc = await ChurchApplication.create({
       churchName,
       address,
@@ -66,18 +66,17 @@ export const registerChurchAdmin = async (req, res) => {
         email: normalizedEmail,
         username: churchName,
         name: churchName,
-        password: hash,          // ⬅️ store password
+        password: hash,
         role: "church-admin",
         isVerified: false,
         regOTP: otp,
         regOTPExpiry: expiry,
       });
     } else {
-      // if user exists (e.g., Google-linked), set role + set password if missing
       if (!["admin", "superadmin"].includes(user.role)) {
         user.role = "church-admin";
       }
-      if (!user.password) user.password = hash; // don't overwrite an existing password
+      if (!user.password) user.password = hash; // don't overwrite existing password
       user.isVerified = false;
       user.regOTP = otp;
       user.regOTPExpiry = expiry;
@@ -88,7 +87,6 @@ export const registerChurchAdmin = async (req, res) => {
       await sendOTPEmail(normalizedEmail, `Your AmPower verification code is: ${otp}`);
     } catch (e) {
       console.warn("Failed to send registration OTP:", e.message);
-      // continue; user can request resend
     }
 
     return res.status(201).json({
@@ -129,56 +127,152 @@ export const getApplication = async (req, res) => {
   res.json(item);
 };
 
-
 function generateTempPassword(len = 8) {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
   return Array.from({ length: len }, () => alphabet[crypto.randomInt(alphabet.length)]).join("");
 }
 
-export const approveApplication = async (req, res) => {
-  const app = await ChurchApplication.findById(req.params.id);
-  if (!app) return res.status(404).json({ message: "Not found" });
-  if (app.status === "approved") return res.json({ message: "Already approved." });
-
-  let user = await User.findOne({ email: app.email.toLowerCase() });
-  if (user) {
-    // ensure role but DO NOT overwrite an existing password
-    user.role = "church-admin";
-    await user.save();
-  } else {
-    const tempPass = generateTempPassword(10);
-    const hash = await bcrypt.hash(tempPass, 12);
-    user = await User.create({
-      email: app.email.toLowerCase(),
-      username: app.churchName,
-      name: app.churchName,
-      password: hash,
-      role: "church-admin",
-    });
-    try {
-      await sendOTPEmail(app.email, `Your temporary password: ${tempPass}\nPlease log in and change it.`);
-    } catch (e) {
-      console.warn("Email send failed (temp pass):", e.message);
-    }
+// unique 6-char join code (no O/0/I/1)
+async function generateUniqueJoinCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const makeCode = () => Array.from({ length: 6 }, () => alphabet[crypto.randomInt(alphabet.length)]).join("");
+  for (let i = 0; i < 5; i++) {
+    const code = makeCode();
+    const clash = await ChurchApplication.findOne({ joinCode: code }).lean();
+    if (!clash) return code;
   }
+  throw new Error("Failed to generate join code");
+}
 
-  app.status = "approved";
-  app.notes = (req.body?.notes || "").trim();
-  app.reviewedBy = req.user?._id;
-  await app.save();
+export const approveApplication = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const app = await ChurchApplication.findById(id).lean();
+    if (!app) return res.status(404).json({ message: "Not found" });
 
-  res.json({ message: "Approved", userId: user._id });
+    if (app.status === "approved") {
+      return res.json({ message: "Already approved.", joinCode: app.joinCode || null });
+    }
+
+    // upsert/ensure church-admin user
+    let newTempPass = null;
+    let user = await User.findOne({ email: app.email.toLowerCase() });
+    if (user) {
+      user.role = "church-admin";
+      await user.save();
+    } else {
+      newTempPass = generateTempPassword(10);
+      const hash = await bcrypt.hash(newTempPass, 12);
+      user = await User.create({
+        email: app.email.toLowerCase(),
+        username: app.churchName,
+        name: app.churchName,
+        password: hash,
+        role: "church-admin",
+      });
+    }
+
+    // ensure joinCode (computed here; saved via atomic update)
+    const update = {
+      status: "approved",
+      notes: String(req.body?.notes || "").trim(),
+      reviewedBy: req.user?._id,
+    };
+    if (!app.joinCode) {
+      try {
+        update.joinCode = await generateUniqueJoinCode();
+        update.joinCodeGeneratedAt = new Date();
+      } catch (e) {
+        console.warn("Join code generation warning:", e.message);
+      }
+    }
+
+    const updated = await ChurchApplication.findByIdAndUpdate(
+      id,
+      { $set: update },
+      { new: true, runValidators: false } // ⬅️ avoid re-validating unrelated required fields
+    ).lean();
+
+    // send approval email
+    try {
+      const to = String(app.email || "").toLowerCase().trim();
+      if (to) {
+        const lines = [
+          `Hello ${app.churchName || "there"},`,
+          ``,
+          `Your AmPower church application has been APPROVED 🎉`,
+          (updated?.joinCode || app.joinCode) ? `Join Code: ${updated?.joinCode || app.joinCode}` : "",
+          newTempPass ? `Temporary Password: ${newTempPass}` : "",
+          newTempPass
+            ? `Use your email (${to}) and the temporary password above to sign in, then change it in your profile.`
+            : `You can now sign in. If you forgot your password, use "Forgot Password" to reset.`,
+          ``,
+          `You may invite members using the join code in your church profile at any time.`,
+          ``,
+          `— AmPower Team`,
+        ].filter(Boolean);
+        await sendOTPEmail(to, lines.join("\n"));
+      }
+    } catch (mailErr) {
+      console.warn("Approval email send failed:", mailErr?.message || mailErr);
+    }
+
+    return res.json({
+      message: "Approved",
+      userId: user._id,
+      joinCode: updated?.joinCode || app.joinCode || null,
+    });
+  } catch (e) {
+    console.error("approveApplication error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
 
 export const rejectApplication = async (req, res) => {
-  const app = await ChurchApplication.findById(req.params.id);
-  if (!app) return res.status(404).json({ message: "Not found" });
-  app.status = "rejected";
-  app.notes = (req.body?.notes || "").trim();
-  app.reviewedBy = req.user?._id;
-  await app.save();
-  res.json({ message: "Rejected" });
+  try {
+    const id = req.params.id;
+    const app = await ChurchApplication.findById(id).lean();
+    if (!app) return res.status(404).json({ message: "Not found" });
+
+    const { reason = "", notes = "" } = req.body || {};
+    const combinedNotes = [notes, reason].map(s => String(s || "").trim()).filter(Boolean).join("\n");
+
+    // atomic update without triggering validators on other fields
+    await ChurchApplication.findByIdAndUpdate(
+      id,
+      { $set: { status: "rejected", notes: combinedNotes, reviewedBy: req.user?._id } },
+      { runValidators: false }
+    );
+
+    // notify via email
+    try {
+      const to = String(app.email || "").toLowerCase().trim();
+      if (to) {
+        const lines = [
+          `Hello ${app.churchName || "there"},`,
+          ``,
+          `Thank you for applying to AmPower.`,
+          `We’re sorry to inform you that your application was not approved at this time.`,
+          reason ? `` : "",
+          reason ? `Reason: ${reason}` : "",
+          ``,
+          `If you believe this was a mistake or you would like to re-apply, please reply to this email.`,
+          ``,
+          `— AmPower Team`,
+        ].filter(Boolean);
+        await sendOTPEmail(to, lines.join("\n"));
+      }
+    } catch (mailErr) {
+      console.warn("Rejection email send failed:", mailErr?.message || mailErr);
+    }
+
+    res.json({ message: "Rejected" });
+  } catch (e) {
+    console.error("rejectApplication error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
+
 function canManageChurch(req, appDoc) {
   if (!appDoc) return false;
   const isAdmin = ["admin", "superadmin"].includes(req.user?.role);
@@ -189,42 +283,43 @@ function canManageChurch(req, appDoc) {
 }
 
 export const generateJoinCode = async (req, res) => {
-  const app = await ChurchApplication.findById(req.params.id);
-  if (!app) return res.status(404).json({ message: "Not found" });
-  if (app.status !== "approved") {
-    return res.status(400).json({ message: "Church must be approved first." });
-  }
-  if (!canManageChurch(req, app)) {
-    return res.status(403).json({ message: "Not allowed." });
-  }
+  try {
+    const id = req.params.id;
+    const app = await ChurchApplication.findById(id).lean();
+    if (!app) return res.status(404).json({ message: "Not found" });
+    if (app.status !== "approved") {
+      return res.status(400).json({ message: "Church must be approved first." });
+    }
+    if (!canManageChurch(req, app)) {
+      return res.status(403).json({ message: "Not allowed." });
+    }
 
-  // ✅ If a code already exists, DO NOT change it. Return the same code every time.
-  if (app.joinCode) {
-    return res.json({
-      joinCode: app.joinCode,
-      generatedAt: app.joinCodeGeneratedAt,
-      alreadyExists: true,
+    if (app.joinCode) {
+      return res.json({
+        joinCode: app.joinCode,
+        generatedAt: app.joinCodeGeneratedAt,
+        alreadyExists: true,
+      });
+    }
+
+    const code = await generateUniqueJoinCode();
+    const now = new Date();
+
+    const updated = await ChurchApplication.findByIdAndUpdate(
+      id,
+      { $set: { joinCode: code, joinCodeGeneratedAt: now } },
+      { new: true, runValidators: false }
+    ).lean();
+
+    res.json({
+      joinCode: updated.joinCode,
+      generatedAt: updated.joinCodeGeneratedAt,
+      alreadyExists: false,
     });
+  } catch (e) {
+    console.error("generateJoinCode error:", e);
+    res.status(500).json({ message: "Server error" });
   }
-
-  // Otherwise generate once
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/0/I/1
-  const makeCode = () =>
-    Array.from({ length: 6 }, () => alphabet[crypto.randomInt(alphabet.length)]).join("");
-
-  let code = null;
-  for (let i = 0; i < 5; i++) {
-    const tryCode = makeCode();
-    const clash = await ChurchApplication.findOne({ joinCode: tryCode }).lean();
-    if (!clash) { code = tryCode; break; }
-  }
-  if (!code) return res.status(500).json({ message: "Failed to generate code. Try again." });
-
-  app.joinCode = code;
-  app.joinCodeGeneratedAt = new Date();
-  await app.save();
-
-  res.json({ joinCode: app.joinCode, generatedAt: app.joinCodeGeneratedAt, alreadyExists: false });
 };
 
 export const getChurchStats = async (req, res) => {
@@ -237,7 +332,7 @@ export const getChurchStats = async (req, res) => {
   const totalParishioners = await User.countDocuments({
     churchRef: app._id,
     role: "member",
-    isVerified: true, // count verified members only
+    isVerified: true,
   });
 
   res.json({
@@ -248,7 +343,6 @@ export const getChurchStats = async (req, res) => {
 };
 
 export const getMyChurchApplication = async (req, res) => {
-  // church-admin’s email == ChurchApplication.email (your flow)
   const email = req.user?.email?.toLowerCase();
   if (!email) return res.status(401).json({ message: "Unauthorized" });
 
@@ -257,4 +351,3 @@ export const getMyChurchApplication = async (req, res) => {
 
   res.json({ id: app._id, churchName: app.churchName, status: app.status, joinCode: app.joinCode || null });
 };
-
