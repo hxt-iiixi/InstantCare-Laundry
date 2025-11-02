@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "../../lib/api";
-import { GoogleLogin } from "@react-oauth/google";
-
+import { Eye, EyeOff } from "lucide-react"; // 👁️ Import icons
 
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -53,21 +54,43 @@ export default function ResetPasswordPage() {
         Updating password for <span className="font-medium">{email}</span>.
       </p>
 
-      <input
-        type="password"
-        placeholder="New password (min 8 chars)"
-        value={newPassword}
-        onChange={(e) => setNewPassword(e.target.value)}
-        className="w-full p-3 border rounded mb-3"
-      />
+      {/* === New Password === */}
+      <div className="relative mb-3">
+        <input
+          type={showNewPass ? "text" : "password"}
+          placeholder="New password (min 8 chars)"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="w-full p-3 pr-10 border rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+        />
+        <button
+          type="button"
+          onClick={() => setShowNewPass((v) => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          aria-label={showNewPass ? "Hide password" : "Show password"}
+        >
+          {showNewPass ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+        </button>
+      </div>
 
-      <input
-        type="password"
-        placeholder="Confirm new password"
-        value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
-        className="w-full p-3 border rounded mb-4"
-      />
+      {/* === Confirm Password === */}
+      <div className="relative mb-4">
+        <input
+          type={showConfirmPass ? "text" : "password"}
+          placeholder="Confirm new password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="w-full p-3 pr-10 border rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+        />
+        <button
+          type="button"
+          onClick={() => setShowConfirmPass((v) => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          aria-label={showConfirmPass ? "Hide password" : "Show password"}
+        >
+          {showConfirmPass ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+        </button>
+      </div>
 
       <button
         onClick={handleReset}
@@ -78,5 +101,4 @@ export default function ResetPasswordPage() {
       </button>
     </div>
   );
-  
 }
