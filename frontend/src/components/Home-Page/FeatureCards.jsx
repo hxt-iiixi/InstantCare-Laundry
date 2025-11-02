@@ -98,12 +98,6 @@ export default function FeatureCards() {
         </p>
 
         <div className="mt-6">
-          <Link
-            to={it.to}
-            className="block w-full text-center rounded-md border border-[#FFB86B] bg-[#FFF4EA] px-5 py-3 text-sm sm:text-[15px] font-semibold text-[#BB5B0F] hover:brightness-95"
-          >
-            View Details
-          </Link>
         </div>
       </motion.article>
     ))}
