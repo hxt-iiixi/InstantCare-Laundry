@@ -18,7 +18,7 @@ import { Server as SocketIOServer } from "socket.io";
 import ministryRoutes from "./routes/ministryRoutes.js";
 import multer from "multer";
 import { Server } from "lucide-react";
-
+import memberRoutes from "./routes/memberRoutes.js";
 import { sendContactEmail, sendContactAutoReply } from "./utils/mailer.js";
 
 dotenv.config();
@@ -47,7 +47,7 @@ const ServiceSchema = new mongoose.Schema({
   pricePerKg: Number,
 });
 const Service = mongoose.model("Service", ServiceSchema);
-
+app.use("/api/members", memberRoutes);
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
    cors: {

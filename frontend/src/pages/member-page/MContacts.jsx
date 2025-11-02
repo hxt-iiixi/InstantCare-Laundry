@@ -1,73 +1,87 @@
+// src/pages/member-pages/Contact.jsx
 import React, { useEffect, useState } from "react";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Phone, MapPin } from "lucide-react";
 import Navbar from "../../components/member-pages/Navbar";
-import ChurchInfoFooter from "../../components/Home-Page/ChurchInfoFooter";
-import imgkids from "../../assets/icons/jesus with kids.png";
 import { api } from "../../lib/api";
+import imgkids from "../../assets/icons/jesus with kids.png";
 
 export default function Contact() {
   const [churchName, setChurchName] = useState("Your Church");
   const [churchEmail, setChurchEmail] = useState("");
+  const [subject, setSubject] = useState("Inquiry from parish member");
   const [message, setMessage] = useState("");
+  const [loadingEmail, setLoadingEmail] = useState(true);
+  const [sending, setSending] = useState(false);
 
-useEffect(() => {
-  let mounted = true;
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-  (async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        // member → church
+        const mc = await api.get("/api/members/me/church", { headers }).catch(() => null);
+        const mChurch = mc?.data?.church || null;
 
-      // 1) member → church (same pattern as MemberChurch)
-      const mc = await api.get("/api/members/me/church", { headers });
-      const mChurch = mc?.data?.church || null;
-
-      // fallback: if you're logged in as church-admin (not member)
-      let churchId = mChurch?.id || null;
-      if (!churchId) {
-        try {
-          const ac = await api.get("/api/church-admin/me/church", { headers });
+        // fallback (if browsing as church-admin)
+        let churchId = mChurch?.id || null;
+        if (!churchId) {
+          const ac = await api.get("/api/church-admin/me/church", { headers }).catch(() => null);
           churchId = ac?.data?.church?.id || null;
-        } catch {}
+        }
+        if (!churchId) {
+          setLoadingEmail(false);
+          return;
+        }
+
+        // public summary (no isAdmin)
+        const { data } = await api.get(`/api/church-admin/applications/${churchId}/summary`, { headers });
+        if (!mounted) return;
+
+        const name = mChurch?.name || data.churchName || data.name || "Your Church";
+        setChurchName(name);
+        setChurchEmail(data.email || "");
+      } catch (e) {
+        console.error("Contact init error:", e?.response?.data || e?.message || e);
+      } finally {
+        if (mounted) setLoadingEmail(false);
       }
+    })();
+    return () => (mounted = false);
+  }, []);
 
-      if (!churchId || !mounted) return;
-
-      // 2) full church doc (has email + official name)
-      const app = await api.get(`/api/church-admin/applications/${churchId}`, { headers });
-      const ch = app?.data?.church || {};
-
-      const name = mChurch?.name || ch.churchName || ch.name || "Your Church";
-      if (!mounted) return;
-
-      setChurchName(name);
-      setChurchEmail(ch.email || "");
-
-      // keep other UI (e.g., headers) in sync if they read localStorage
-      localStorage.setItem("churchName", name);
-      window.dispatchEvent(new CustomEvent("churchName:update", { detail: name }));
-    } catch (e) {
-      console.error("Contact init error:", e?.response?.data || e?.message || e);
-    }
-  })();
-
-  return () => { mounted = false; };
-}, []);
-
-
-  // simple functional send: opens the user's mail app with the church email prefilled
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleCopy = async () => {
     if (!churchEmail) return;
-    const href = `mailto:${churchEmail}?subject=${encodeURIComponent(
-      "Inquiry from parish member"
-    )}&body=${encodeURIComponent(message || "")}`;
-    window.location.href = href;
+    try {
+      await navigator.clipboard.writeText(churchEmail);
+    } catch {}
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!churchEmail) return alert("No church email on file.");
+    try {
+      setSending(true);
+      // backend sends the email via SMTP
+      await api.post("/api/members/contact", { subject, message });
+      alert("Message sent! The church admin will receive your email shortly.");
+      setMessage("");
+    } catch (err) {
+      console.error(err);
+      alert(
+        err?.response?.data?.message ||
+          "Failed to send email. Please try again later."
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-800">
       <Navbar />
+
       <div className="max-w-6xl mx-auto px-1 py-10">
         <div className="flex items-center justify-between">
           <header className="text-left max-w-2xl ml-[20%]">
@@ -75,7 +89,8 @@ useEffect(() => {
             <p className="text-gray-600 mt-4">
               Get in touch with us for inquiries, support, or collaboration.
               <br />
-              The <span className="text-orange-600">{churchName}</span> team is committed to helping churches grow <br />
+              The <span className="text-orange-600">{churchName.toLowerCase()}</span> team is committed to helping churches grow
+              <br />
               through digital innovation and faithful service.
             </p>
           </header>
@@ -84,29 +99,44 @@ useEffect(() => {
       </div>
 
       <section className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-        {/* Left Form */}
         <div className="bg-gray-50 shadow-md rounded-2xl p-8">
           <h2 className="text-2xl font-bold mb-4">
-            Ready to empower your church with{" "}
-            <span className="text-orange-600">{churchName}</span>?
-            <br />
-            Contact us now:
+            Email <span className="text-orange-600">{churchName.toLowerCase()}</span>:
           </h2>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {/* Recipient (church email) */}
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={churchEmail}
+                readOnly
+                placeholder={loadingEmail ? "Loading email..." : "No church email on file"}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleCopy}
+                disabled={!churchEmail}
+                className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:bg-gray-100"
+              >
+                Copy
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 -mt-1">Admins only.</p>
+
+            <label className="block text-sm text-gray-700">Subject</label>
             <input
-              type="email"
-              value={churchEmail}
-              readOnly
-              placeholder="Email address"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              placeholder="Subject"
             />
 
-            {/* Message */}
+            <label className="block text-sm text-gray-700">Message</label>
             <textarea
-              placeholder="Leave us a message..."
-              rows="4"
+              placeholder="Write your message..."
+              rows="6"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
@@ -114,22 +144,20 @@ useEffect(() => {
 
             <button
               type="submit"
-              disabled={!churchEmail}
+              disabled={!churchEmail || sending}
               className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 text-white font-semibold py-3 rounded-lg transition duration-200"
             >
-              Send to email
+              {sending ? "Sending…" : "Send to email"}
             </button>
           </form>
         </div>
 
-        {/* Right Info */}
+        {/* Right info (unchanged) */}
         <div className="flex flex-col justify-between space-y-6">
           <div>
-            <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
-              <span role="img" aria-label="hands">🙏</span> Connect with Us
-            </h3>
+            <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">🙏 Connect with Us</h3>
             <p className="text-gray-600 mb-3">
-              Reach out to our {churchName} team for guidance, support, or collaboration.
+              Reach out to our {churchName.toLowerCase()} team for guidance, support, or collaboration.
             </p>
             <ul className="space-y-2 text-gray-700">
               <li>📩 Send us a message</li>
@@ -154,9 +182,7 @@ useEffect(() => {
             <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-orange-600" /> Visit Us
             </h3>
-            <p className="text-gray-600">
-              Let’s talk in person about empowering your parish and ministries.
-            </p>
+            <p className="text-gray-600">Let’s talk in person about empowering your parish and ministries.</p>
             <p className="font-semibold mt-2">
               📍 PHINMA University of Pangasinan,
               <br />

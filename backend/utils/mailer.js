@@ -54,3 +54,13 @@ export const sendContactAutoReply = async ({ to, name }) => {
   const text = `Hi ${name || "there"},\n\nThanks for reaching out to AmPower. We received your message and will get back to you shortly.\n\n— AmPower Team`;
   await sendMail({ to, subject, text });
 };
+export const sendTransactionalEmail = async ({ to, subject, text, html, replyTo }) => {
+  return transporter.sendMail({
+    from: process.env.SMTP_USER,
+    to,
+    replyTo, // member's email for quick reply
+    subject,
+    text,
+    html,
+  });
+};
