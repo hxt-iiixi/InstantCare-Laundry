@@ -19,7 +19,7 @@ import ministryRoutes from "./routes/ministryRoutes.js";
 import multer from "multer";
 import { Server } from "lucide-react";
 
-
+import { sendContactEmail, sendContactAutoReply } from "./utils/mailer.js";
 
 dotenv.config();
 
@@ -94,6 +94,42 @@ app.post("/api/announcements", auth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+app.post("/api/contact", async (req, res) => {
+  try {
+    const { firstName, lastName, email, phone, message } = req.body || {};
+    const fn = String(firstName || "").trim();
+    const ln = String(lastName || "").trim();
+    const em = String(email || "").toLowerCase().trim();
+    const ph = String(phone || "").trim();
+    const msg = String(message || "").trim();
+
+    if (!fn || !ln || !em || !msg) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em);
+    if (!emailOk) return res.status(400).json({ message: "Invalid email address." });
+    if (ph && !/^\d{11}$/.test(ph)) {
+      return res.status(400).json({ message: "Phone must be 11 digits (PH format)." });
+    }
+
+    await sendContactEmail({
+      fromEmail: em,
+      fromName: `${fn} ${ln}`,
+      phone: ph,
+      message: msg,
+    });
+
+    // best-effort auto-ack
+    try { await sendContactAutoReply({ to: em, name: fn }); } catch {}
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("POST /api/contact error:", e);
+    return res.status(500).json({ message: "Failed to send message." });
+  }
+});
+
 
 app.get("/api/announcements/latest", auth, async (req, res) => {
   try {
