@@ -264,32 +264,7 @@ const onCover = async (e) => {
           </div>
 
           <div className="md:col-span-2">
-            <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-4 flex items-start gap-3">
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-slate-800">Bio</span>
-                  <button
-                    onClick={() => (editBio ? saveBio() : setEditBio(true))}
-                    className="inline-flex items-center gap-1 text-orange-600"
-                  >
-                    <FiEdit2 /> {editBio ? "Save" : "Edit"}
-                  </button>
-                </div>
-                {editBio ? (
-                  <textarea
-                    rows={3}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
-                    placeholder="Write something about yourself…"
-                  />
-                ) : (
-                  <p className="text-sm text-slate-700 leading-6">
-                    {bio || "No bio yet."}
-                  </p>
-                )}
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
