@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import logo from "/src/assets/icons/ampower.svg";
 import { FaCaretDown } from 'react-icons/fa'; // Dropdown icon
-import userAvatar from "/src/assets/images/user-avatar.png"; // Sample avatar image
+import userAvatar from "/src/assets/images/user (3).png"; // Sample avatar image
 import { toast } from "sonner";
 import { useGlobalAnnouncement } from "../../lib/useGlobalAnnouncement";
 

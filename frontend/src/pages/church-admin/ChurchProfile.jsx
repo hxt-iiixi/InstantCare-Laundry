@@ -3,8 +3,8 @@ import { FiCamera, FiEdit2 } from "react-icons/fi";
 import AdminHeader from "../../components/church-admin/AdminHeader";
 import AdminSidebar from "../../components/church-admin/AdminSidebar";
 import { api } from "../../lib/api";
-import placeholderAvatar from "/src/assets/images/user-avatar.png";
-import placeholderCover from "/src/assets/images/cover-placeholder.png";
+import placeholderAvatar from "/src/assets/images/360_F_603464965_1r73cBMrG3f0dWEux4kS8eS3pCxipNIt 2.svg";
+import placeholderCover from "/src/assets/images/about2.jpg";
 import { toast } from "sonner";
 
 export default function ChurchAdminProfile() {
@@ -131,7 +131,7 @@ const onCover = async (e) => {
             <div className="relative">
               <img src={coverImage} alt="Cover" className="w-full h-56 md:h-64 object-cover" />
               <label className="absolute top-3 right-3 inline-flex items-center gap-1 bg-white/90 rounded-full px-2 py-1 text-sm cursor-pointer">
-                <FiCamera /> <span className="hidden sm:inline">Change cover</span>
+               
                 <input type="file" accept="image/*" className="hidden" onChange={onCover} />
               </label>
 
@@ -140,7 +140,7 @@ const onCover = async (e) => {
                 <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-white overflow-hidden shadow">
                   <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                   <label className="absolute bottom-1 right-1 bg-white/90 p-1 rounded-full cursor-pointer">
-                    <FiCamera size={16} />
+                  
                     <input type="file" accept="image/*" className="hidden" onChange={onAvatar} />
                   </label>
                 </div>
