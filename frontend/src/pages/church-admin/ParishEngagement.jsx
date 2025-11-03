@@ -83,9 +83,6 @@ export default function ParishEngagement() {
             </div>
             <div className="justify-self-end hidden md:block">
               {/* put your illustration img here if you have one */}
-              <div className="w-[320px] h-[180px] rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-500">
-                👨‍👩‍👧‍👦
-              </div>
             </div>
           </div>
 
