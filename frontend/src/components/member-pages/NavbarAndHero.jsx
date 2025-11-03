@@ -184,12 +184,7 @@ export default function NavbarAndHero() {
                 </motion.p>
 
                 <motion.div className="mt-8" variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 2, ease: [0.22, 0.82, 0.2, 1] } } }}>
-                  <Link
-                    to="/join"
-                    className="inline-flex items-center rounded-xl bg-[#FF7A2F] px-6 py-3 text-base font-semibold text-white shadow-sm transition-transform hover:opacity-90 hover:scale-[1.02] active:scale-[0.99]"
-                  >
-                    Join Now
-                  </Link>
+      
                 </motion.div>
               </motion.div>
             </div>

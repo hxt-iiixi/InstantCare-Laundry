@@ -261,10 +261,7 @@ export default function MemberProfile() {
       <div className="max-w-5xl mx-auto mt-6 bg-white rounded-2xl shadow border border-zinc-200 overflow-hidden">
         <div className="relative">
           <img src={coverImage} alt="Cover" className="w-full h-48 md:h-56 object-cover" />
-          <label className="absolute top-3 right-3 inline-flex items-center gap-1 bg-white/90 rounded-full px-2 py-1 text-sm cursor-pointer">
-            <input type="file" accept="image/*" className="hidden" onChange={onCover} />
-            Change cover
-          </label>
+      
 
           {/* avatar */}
           <div className="absolute left-6 -bottom-12">
