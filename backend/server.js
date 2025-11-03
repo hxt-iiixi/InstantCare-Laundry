@@ -20,6 +20,7 @@ import multer from "multer";
 import { Server } from "lucide-react";
 import memberRoutes from "./routes/memberRoutes.js";
 import { sendContactEmail, sendContactAutoReply } from "./utils/mailer.js";
+import fs from "fs";
 
 dotenv.config();
 
@@ -30,7 +31,8 @@ app.use(cors({
    allowedHeaders: ["Content-Type","Authorization"],
   credentials: true
 }));
-
+fs.mkdirSync(path.resolve("uploads/avatars"), { recursive: true });
+app.use("/uploads", express.static(path.resolve("uploads")));
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, "uploads"),
   filename: (_req, file, cb) => cb(null, `${Date.now()}_${file.originalname.replace(/\s+/g,"_")}`)

@@ -1,7 +1,6 @@
 // src/pages/member/MemberProfile.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { FaEdit } from "react-icons/fa";
-import { FiCamera, FiEdit2 } from "react-icons/fi";
 import { toast } from "sonner";
 import Navbar from "../../components/member-pages/Navbar";
 import { api } from "../../lib/api";
@@ -11,7 +10,6 @@ import placeholderCover from "/src/assets/images/aboutBG.jpg";
 const firstWord = (s = "") => (s.trim().split(" ")[0] || "").trim();
 
 export default function MemberProfile() {
-
   const MINISTRIES = [
     { key: "music", label: "Music Ministry", desc: "Lead and provide music for services." },
     { key: "youth", label: "Youth Ministry", desc: "Engage and support the youth community." },
@@ -40,21 +38,21 @@ export default function MemberProfile() {
     return "bg-slate-100 text-slate-600 border border-slate-200";
   };
 
-const [churchId, setChurchId] = useState(null);
-const [myMinistries, setMyMinistries] = useState({});   // { music: "pending" | "approved" | ... }
-const [roster, setRoster] = useState({ music:[], youth:[], education:[], community:[], outreach:[] });
+  const [churchId, setChurchId] = useState(null);
+  const [myMinistries, setMyMinistries] = useState({});
+  const [roster, setRoster] = useState({ music:[], youth:[], education:[], community:[], outreach:[] });
 
-const statusLabel = (s) => {
-  if (s === "approved") return "Joined";
-  if (s === "pending") return "Pending";
-  if (s === "leave-pending") return "Leaving…";
-  if (s === "rejected") return "Rejected";
-  return "Not a member";
-};
+  const statusLabel = (s) => {
+    if (s === "approved") return "Joined";
+    if (s === "pending") return "Pending";
+    if (s === "leave-pending") return "Leaving…";
+    if (s === "rejected") return "Rejected";
+    return "Not a member";
+  };
 
   const [loading, setLoading] = useState(true);
 
-  // visual
+  // visuals
   const [avatar, setAvatar] = useState(placeholderAvatar);
   const [coverImage, setCoverImage] = useState(placeholderCover);
 
@@ -75,8 +73,8 @@ const statusLabel = (s) => {
   useEffect(() => {
     (async () => {
       try {
-        // 1) profile
-        const p = await api.get("/api/me/profile");
+        // 1) member profile (uses new endpoint)
+        const p = await api.get("/api/members/me/profile");
         const u = p?.data?.user || {};
         const name = u.name || u.username || "";
         setFullName(name);
@@ -84,6 +82,7 @@ const statusLabel = (s) => {
         setEmail(u.email || "");
         setRole((u.role || "Parishioner").replace("-", " "));
         setBio(u.bio || "");
+        if (u.avatar) setAvatar(u.avatar);
 
         if (name) localStorage.setItem("name", name);
 
@@ -103,21 +102,21 @@ const statusLabel = (s) => {
           }
 
           setChurchId(churchId || null);
-          if (churchId) {
-            try {
-              const mine = await api.get("/api/ministries/my");
-              const map = {};
-              (mine.data?.items || []).forEach(i => { map[i.ministry] = i.status; });
-              setMyMinistries(map);
-            } catch {}
 
-            try {
-              const r = await api.get("/api/ministries/roster", { params: { churchId } });
-              setRoster(r.data?.roster || {});
-            } catch {}
-          }
+          // my ministries
+          try {
+            const mine = await api.get("/api/ministries/my");
+            const map = {};
+            (mine.data?.items || []).forEach(i => { map[i.ministry] = i.status; });
+            setMyMinistries(map);
+          } catch {}
+
+          // roster
+          try {
+            const r = await api.get("/api/ministries/roster", { params: { churchId } });
+            setRoster(r.data?.roster || {});
+          } catch {}
         }
-
       } catch (e) {
         console.error(e);
         toast.error("Failed to load profile.");
@@ -129,26 +128,49 @@ const statusLabel = (s) => {
 
   const helloName = useMemo(() => firstWord(fullName) || "Friend", [fullName]);
 
-  // file pickers
-const onAvatar = async (e) => {
-  const f = e.target.files?.[0]; if (!f) return;
-  // preview
-  const r = new FileReader(); r.onloadend = () => setAvatar(r.result); r.readAsDataURL(f);
-  // persist
-  const fd = new FormData(); fd.append("file", f);
-  const { data } = await api.post("/api/me/upload?field=avatar", fd, { headers: { "Content-Type":"multipart/form-data" } });
-  setAvatar(data.url);
-};
+  /* --------------------------- uploads (persisted) -------------------------- */
+  const onAvatar = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
 
-// cover
-const onCover = async (e) => {
-  const f = e.target.files?.[0]; if (!f) return;
-  const r = new FileReader(); r.onloadend = () => setCoverImage(r.result); r.readAsDataURL(f);
-  const fd = new FormData(); fd.append("file", f);
-  const { data } = await api.post("/api/me/upload?field=cover", fd, { headers: { "Content-Type":"multipart/form-data" } });
-  setCoverImage(data.url);
-};
-  // actions
+    // preview immediately
+    const r = new FileReader();
+    r.onloadend = () => setAvatar(r.result);
+    r.readAsDataURL(f);
+
+    try {
+      const fd = new FormData();
+      fd.append("file", f);
+      const { data } = await api.post("/api/members/me/avatar", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (data?.url) setAvatar(data.url);
+      toast.success("Profile photo updated.");
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Avatar upload failed.");
+    }
+  };
+
+  // keep existing cover flow (optional on your backend)
+  const onCover = async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const r = new FileReader(); r.onloadend = () => setCoverImage(r.result); r.readAsDataURL(f);
+    try {
+      const fd = new FormData(); fd.append("file", f);
+      // If you added a dedicated cover endpoint, switch this to: /api/members/me/cover
+      const { data } = await api.post("/api/me/upload?field=cover", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (data?.url) setCoverImage(data.url);
+      toast.success("Cover updated.");
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Cover upload failed.");
+    }
+  };
+
+  /* --------------------------------- actions -------------------------------- */
   const discardDetails = () => {
     setFullName(origName);
     setNewPass("");
@@ -159,7 +181,7 @@ const onCover = async (e) => {
   const joinMinistry = async (m) => {
     try {
       const { data } = await api.post("/api/ministries/join", { ministry: m });
-      setMyMinistries(s => ({ ...s, [m]: data.status }));
+      setMyMinistries((s) => ({ ...s, [m]: data.status }));
       toast.success("Request sent.");
     } catch (e) {
       toast.error(e?.response?.data?.message || "Join failed.");
@@ -169,7 +191,7 @@ const onCover = async (e) => {
   const leaveMinistry = async (m) => {
     try {
       const { data } = await api.post("/api/ministries/leave", { ministry: m });
-      setMyMinistries(s => ({ ...s, [m]: data.status }));
+      setMyMinistries((s) => ({ ...s, [m]: data.status }));
       toast.success("Leave request sent.");
     } catch (e) {
       toast.error(e?.response?.data?.message || "Leave failed.");
@@ -187,12 +209,11 @@ const onCover = async (e) => {
       // update name
       if (fullName.trim() !== origName.trim()) {
         try {
-         const { data } = await api.patch("/api/me/profile", { name: fullName.trim() });
+          const { data } = await api.patch("/api/me/profile", { name: fullName.trim() });
           const saved = data?.user?.name || fullName.trim();
           setOrigName(saved);
           localStorage.setItem("name", saved);
         } catch {
-          // if PATCH /api/profile not implemented yet
           localStorage.setItem("name", fullName.trim());
         }
       }
@@ -214,7 +235,7 @@ const onCover = async (e) => {
 
   const saveBio = async () => {
     try {
-     await api.patch("/api/me/profile", { bio: bio || "" }).catch(() => {});
+      await api.patch("/api/me/profile", { bio: bio || "" }).catch(() => {});
       setEditBio(false);
       toast.success("Bio saved.");
     } catch {
@@ -236,249 +257,244 @@ const onCover = async (e) => {
     <div className="min-h-screen bg-[#FBF7F3]">
       <Navbar />
 
-      {/* ===== Header (Cover + Avatar + Name/Role + Bio card) ===== */}
+      {/* ===== Header (Cover + Avatar + Name/Role) ===== */}
       <div className="max-w-5xl mx-auto mt-6 bg-white rounded-2xl shadow border border-zinc-200 overflow-hidden">
         <div className="relative">
           <img src={coverImage} alt="Cover" className="w-full h-48 md:h-56 object-cover" />
           <label className="absolute top-3 right-3 inline-flex items-center gap-1 bg-white/90 rounded-full px-2 py-1 text-sm cursor-pointer">
-           
             <input type="file" accept="image/*" className="hidden" onChange={onCover} />
+            Change cover
           </label>
+
           {/* avatar */}
           <div className="absolute left-6 -bottom-12">
             <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-white overflow-hidden shadow">
               <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
               <label className="absolute bottom-1 right-1 bg-white/90 p-1 rounded-full cursor-pointer">
-               
                 <input type="file" accept="image/*" className="hidden" onChange={onAvatar} />
+                <span className="text-[11px] px-1">Change</span>
               </label>
             </div>
           </div>
         </div>
 
-        {/* name/role + bio row (pulled up) */}
         <div className="px-6 pb-4 pt-14 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-1">
             <div className="text-2xl font-semibold text-orange-600 leading-tight">{fullName}</div>
             <div className="text-slate-600">{role}</div>
           </div>
-
-          <div className="md:col-span-2">
-
-          </div>
+          <div className="md:col-span-2"></div>
         </div>
       </div>
 
-      {/* ===== Details + Ministries (two-column) ===== */}
-    <div className="max-w-5xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* LEFT: Personal Details */}
-      <div className="md:col-span-1">
-        <div className="h-full bg-white rounded-2xl shadow-sm border border-zinc-200 p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-serif font-semibold text-orange-600">Personal Details</h2>
-            <button
-              onClick={() => setEditDetails((v) => !v)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 text-sm"
-            >
-              <FaEdit /> {editDetails ? "Stop Editing" : "Edit"}
-            </button>
-          </div>
-
-          <div className="mt-2 text-sm text-slate-700">
-            <div className="font-semibold">{`Hello, ${helloName}!`}</div>
-            <div className="text-slate-600">Location: {location}</div>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            {/* Full name */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Full name</label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                disabled={!editDetails}
-                className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${
-                  editDetails
-                    ? "border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                    : "bg-zinc-100 border-zinc-200 text-zinc-600 cursor-not-allowed"
-                }`}
-                placeholder="Your full name"
-              />
+      {/* ===== Details + Ministries ===== */}
+      <div className="max-w-5xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* LEFT: Personal Details */}
+        <div className="md:col-span-1">
+          <div className="h-full bg-white rounded-2xl shadow-sm border border-zinc-200 p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-serif font-semibold text-orange-600">Personal Details</h2>
+              <button
+                onClick={() => setEditDetails((v) => !v)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 text-sm"
+              >
+                <FaEdit /> {editDetails ? "Stop Editing" : "Edit"}
+              </button>
             </div>
 
-            {/* Email (read-only) */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Email</label>
-              <input
-                type="email"
-                value={email}
-                disabled
-                className="mt-1 w-full rounded-md border bg-zinc-100 border-zinc-200 text-zinc-600 cursor-not-allowed px-3 py-2 text-sm"
-              />
+            <div className="mt-2 text-sm text-slate-700">
+              <div className="font-semibold">{`Hello, ${helloName}!`}</div>
+              <div className="text-slate-600">Location: {location}</div>
             </div>
 
-            {/* Change password */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Change Password</label>
-              <input
-                type="password"
-                value={newPass}
-                onChange={(e) => setNewPass(e.target.value)}
-                disabled={!editDetails}
-                className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${
-                  editDetails
-                    ? "border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                    : "bg-zinc-100 border-zinc-200 text-zinc-600 cursor-not-allowed"
-                }`}
-                placeholder="****************"
-              />
-            </div>
-
-            {/* Confirm password */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Confirm password</label>
-              <input
-                type="password"
-                value={confPass}
-                onChange={(e) => setConfPass(e.target.value)}
-                disabled={!editDetails}
-                className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${
-                  editDetails
-                    ? "border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                    : "bg-zinc-100 border-zinc-200 text-zinc-600 cursor-not-allowed"
-                }`}
-                placeholder="****************"
-              />
-            </div>
-          </div>
-
-          <div className="mt-6 flex items-center gap-3">
-            <button onClick={discardDetails} className="px-5 py-2 rounded-full bg-orange-200/60 text-orange-800">
-              Discard
-            </button>
-            <button
-              onClick={saveDetails}
-              disabled={!editDetails}
-              className={`px-5 py-2 rounded-full text-white ${
-                editDetails ? "bg-orange-500 hover:bg-orange-600" : "bg-orange-300 cursor-not-allowed"
-              }`}
-            >
-              Save Changes
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT: Church Ministries join list */}
-      <div className="md:col-span-2">
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-2xl font-serif font-semibold text-slate-900">Church Ministries</h3>
-              <p className="text-sm text-slate-500 mt-0.5">Request to join a ministry below</p>
-            </div>
-            {!churchId && (
-              <span className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800">
-                Join a church with a code first
-              </span>
-            )}
-          </div>
-
-          <div className="mt-3 space-y-3">
-            {MINISTRIES.map((m) => {
-              const st = myMinistries[m.key];
-              const canJoin = (!!churchId) && (!st || st === "rejected" || st === "removed");
-              const canLeave = st === "approved";
-              const isPending = st === "pending" || st === "leave-pending";
-
-              return (
-                <div
-                  key={m.key}
-                  className="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 hover:bg-zinc-50"
-                >
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-orange-50 text-orange-600">
-                      <MinistryIcon type={m.key} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-slate-800">{m.label}</div>
-                      <div className="text-xs text-slate-600 truncate">{m.desc}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs rounded-full px-2 py-0.5 ${pillClass(st)}`}>
-                      {statusLabel(st)}
-                    </span>
-
-                    {canJoin && (
-                      <button
-                        onClick={() => joinMinistry(m.key)}
-                        className="rounded-md bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1.5"
-                      >
-                        Join now
-                      </button>
-                    )}
-                    {canLeave && (
-                      <button
-                        onClick={() => leaveMinistry(m.key)}
-                        className="rounded-md bg-white border border-red-200 text-red-600 hover:bg-red-50 text-xs px-3 py-1.5"
-                      >
-                        Leave
-                      </button>
-                    )}
-                    {isPending && (
-                      <button
-                        disabled
-                        className="rounded-md bg-slate-200 text-slate-600 text-xs px-3 py-1.5 cursor-not-allowed"
-                      >
-                        Request sent
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* ===== Members per ministry (3 boxes) ===== */}
-    <div className="max-w-5xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-      {[
-        { key: "music", label: "Music Ministry", desc: "Lead and provide music for services." },
-      { key: "youth", label: "Youth Ministry", desc: "Engage and support the youth community." },
-      { key: "education", label: "Education Ministry", desc: "Teach and facilitate learning within parish." },
-      { key: "community", label: "Community Ministry", desc: "Support and connect with the local community." },
-      { key: "outreach", label: "Outreach Ministry", desc: "Serve those in need outside the parish." },
-      ].map((box) => (
-        <div key={box.key} className="bg-white rounded-2xl border border-zinc-200 p-5">
-          <div className="text-2xl font-serif font-semibold text-slate-800">
-            {box.label} <span className="ml-2 text-sm text-slate-500">Members</span>
-          </div>
-          <ol className="mt-4 space-y-2 text-sm text-slate-800">
-            {(roster[box.key] || []).map((u, i) => (
-              <li key={u.id} className="flex items-center gap-2">
-                <span className="text-slate-500 w-6 text-right">{i + 1}.</span>
-                <img
-                  src={u.avatar || "/src/assets/images/user-avatar.png"}
-                  className="h-6 w-6 rounded-full"
-                  alt=""
+            <div className="mt-5 space-y-4">
+              {/* Full name */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Full name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  disabled={!editDetails}
+                  className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${
+                    editDetails
+                      ? "border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                      : "bg-zinc-100 border-zinc-200 text-zinc-600 cursor-not-allowed"
+                  }`}
+                  placeholder="Your full name"
                 />
-                <span className="truncate">{u.name}</span>
-              </li>
-            ))}
-            {(!roster[box.key] || roster[box.key].length === 0) && (
-              <li className="text-slate-500">No members yet.</li>
-            )}
-          </ol>
+              </div>
+
+              {/* Email (read-only) */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  disabled
+                  className="mt-1 w-full rounded-md border bg-zinc-100 border-zinc-200 text-zinc-600 cursor-not-allowed px-3 py-2 text-sm"
+                />
+              </div>
+
+              {/* Change password */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Change Password</label>
+                <input
+                  type="password"
+                  value={newPass}
+                  onChange={(e) => setNewPass(e.target.value)}
+                  disabled={!editDetails}
+                  className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${
+                    editDetails
+                      ? "border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                      : "bg-zinc-100 border-zinc-200 text-zinc-600 cursor-not-allowed"
+                  }`}
+                  placeholder="****************"
+                />
+              </div>
+
+              {/* Confirm password */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Confirm password</label>
+                <input
+                  type="password"
+                  value={confPass}
+                  onChange={(e) => setConfPass(e.target.value)}
+                  disabled={!editDetails}
+                  className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${
+                    editDetails
+                      ? "border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                      : "bg-zinc-100 border-zinc-200 text-zinc-600 cursor-not-allowed"
+                  }`}
+                  placeholder="****************"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center gap-3">
+              <button onClick={discardDetails} className="px-5 py-2 rounded-full bg-orange-200/60 text-orange-800">
+                Discard
+              </button>
+              <button
+                onClick={saveDetails}
+                disabled={!editDetails}
+                className={`px-5 py-2 rounded-full text-white ${
+                  editDetails ? "bg-orange-500 hover:bg-orange-600" : "bg-orange-300 cursor-not-allowed"
+                }`}
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
         </div>
-      ))}
-    </div>
 
+        {/* RIGHT: Church Ministries join list */}
+        <div className="md:col-span-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-2xl font-serif font-semibold text-slate-900">Church Ministries</h3>
+                <p className="text-sm text-slate-500 mt-0.5">Request to join a ministry below</p>
+              </div>
+              {!churchId && (
+                <span className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800">
+                  Join a church with a code first
+                </span>
+              )}
+            </div>
 
+            <div className="mt-3 space-y-3">
+              {MINISTRIES.map((m) => {
+                const st = myMinistries[m.key];
+                const canJoin = !!churchId && (!st || st === "rejected" || st === "removed");
+                const canLeave = st === "approved";
+                const isPending = st === "pending" || st === "leave-pending";
+
+                return (
+                  <div
+                    key={m.key}
+                    className="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 hover:bg-zinc-50"
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+                        <MinistryIcon type={m.key} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-medium text-slate-800">{m.label}</div>
+                        <div className="text-xs text-slate-600 truncate">{m.desc}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs rounded-full px-2 py-0.5 ${pillClass(st)}`}>
+                        {statusLabel(st)}
+                      </span>
+
+                      {canJoin && (
+                        <button
+                          onClick={() => joinMinistry(m.key)}
+                          className="rounded-md bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1.5"
+                        >
+                          Join now
+                        </button>
+                      )}
+                      {canLeave && (
+                        <button
+                          onClick={() => leaveMinistry(m.key)}
+                          className="rounded-md bg-white border border-red-200 text-red-600 hover:bg-red-50 text-xs px-3 py-1.5"
+                        >
+                          Leave
+                        </button>
+                      )}
+                      {isPending && (
+                        <button
+                          disabled
+                          className="rounded-md bg-slate-200 text-slate-600 text-xs px-3 py-1.5 cursor-not-allowed"
+                        >
+                          Request sent
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== Members per ministry ===== */}
+      <div className="max-w-5xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[
+          { key: "music", label: "Music Ministry", desc: "Lead and provide music for services." },
+          { key: "youth", label: "Youth Ministry", desc: "Engage and support the youth community." },
+          { key: "education", label: "Education Ministry", desc: "Teach and facilitate learning within parish." },
+          { key: "community", label: "Community Ministry", desc: "Support and connect with the local community." },
+          { key: "outreach", label: "Outreach Ministry", desc: "Serve those in need outside the parish." },
+        ].map((box) => (
+          <div key={box.key} className="bg-white rounded-2xl border border-zinc-200 p-5">
+            <div className="text-2xl font-serif font-semibold text-slate-800">
+              {box.label} <span className="ml-2 text-sm text-slate-500">Members</span>
+            </div>
+            <ol className="mt-4 space-y-2 text-sm text-slate-800">
+              {(roster[box.key] || []).map((u, i) => (
+                <li key={u.id} className="flex items-center gap-2">
+                  <span className="text-slate-500 w-6 text-right">{i + 1}.</span>
+                  <img
+                    src={u.avatar || "/src/assets/images/user-avatar.png"}
+                    className="h-6 w-6 rounded-full"
+                    alt=""
+                  />
+                  <span className="truncate">{u.name}</span>
+                </li>
+              ))}
+              {(!roster[box.key] || roster[box.key].length === 0) && (
+                <li className="text-slate-500">No members yet.</li>
+              )}
+            </ol>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

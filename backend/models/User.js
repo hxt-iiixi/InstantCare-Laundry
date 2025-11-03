@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema(
     phone:     String,
     dob:       Date,
     cover:     String, // profile cover
-
+    avatar: { type: String, default: "" },
     churchRef: { type: mongoose.Schema.Types.ObjectId, ref: "ChurchApplication", index: true },
     status: {
     type: String,
