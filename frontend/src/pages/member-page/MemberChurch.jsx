@@ -6,11 +6,8 @@ import Navbar from "../../components/member-pages/Navbar";
 import placeholderCover from "../../assets/images/cover-member.png";
 import eventImage from "../../assets/images/event-image.png";
 
-
-// point api to your API
 api.defaults.baseURL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-// small pill component
 function EventPill({ title, muted }) {
   return (
     <span
@@ -31,14 +28,12 @@ export default function MemberChurch() {
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  // month navigation
   const [viewMonth, setViewMonth] = useState(dayjs());
   const startOfMonth = viewMonth.startOf("month");
   const endOfMonth = viewMonth.endOf("month");
   const startGrid = startOfMonth.startOf("week");
   const days = Array.from({ length: 42 }).map((_, i) => startGrid.add(i, "day"));
 
-  // index events by date (YYYY-MM-DD)
   const byDate = useMemo(() => {
     const map = new Map();
     events.forEach((e) => {
@@ -48,7 +43,6 @@ export default function MemberChurch() {
     return map;
   }, [events]);
 
-  // fetch member’s church
   useEffect(() => {
     (async () => {
       try {
@@ -63,7 +57,6 @@ export default function MemberChurch() {
     })();
   }, []);
 
-  // fetch events for that church
   useEffect(() => {
     (async () => {
       if (!church?.id) return;
@@ -72,7 +65,6 @@ export default function MemberChurch() {
           params: { churchId: church.id },
         });
         setEvents(data || []);
-        // preselect first upcoming event in the current month (optional)
         const todayKey = dayjs().format("YYYY-MM-DD");
         const upcoming =
           data.find((e) => dayjs(e.date).format("YYYY-MM-DD") >= todayKey) || data[0] || null;
@@ -95,9 +87,7 @@ export default function MemberChurch() {
             <h1 className="text-4xl font-semibold">
               {church?.name || "Your Church"}
             </h1>
-            <p className="mt-2 text-lg">
-              Stay updated with parish events and activities.
-            </p>
+            <p className="mt-2 text-lg">Stay updated with parish events and activities.</p>
           </div>
         </div>
       </header>
@@ -140,18 +130,27 @@ export default function MemberChurch() {
                 const inMonth =
                   d.isAfter(startOfMonth.subtract(1, "day")) &&
                   d.isBefore(endOfMonth.add(1, "day"));
+                const isToday = d.isSame(dayjs(), "day");
                 const key = d.format("YYYY-MM-DD");
                 const evts = byDate.get(key) || [];
 
                 return (
                   <div
                     key={i}
-                    className={`min-h-[112px] bg-white p-2 text-sm relative ${
-                      inMonth ? "" : "bg-slate-50 text-slate-300"
-                    }`}
+                    className={`min-h-[112px] p-2 text-sm relative ${
+                      inMonth ? "bg-white" : "bg-slate-50 text-slate-300"
+                    } ${isToday ? "ring-2 ring-orange-400" : ""}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[12px] ${inMonth ? "text-slate-600" : ""}`}>
+                    <div className="flex items-start justify-between">
+                      <span
+                        className={`text-[12px] ${
+                          inMonth ? "text-slate-600" : ""
+                        } ${
+                          isToday
+                            ? "inline-flex items-center justify-center h-6 w-6 rounded-full bg-orange-500 text-white font-semibold"
+                            : ""
+                        }`}
+                      >
                         {d.date()}
                       </span>
                     </div>
@@ -194,7 +193,15 @@ export default function MemberChurch() {
                         {selectedEvent.title}
                       </h4>
 
-                      <div className="mt-3 space-y-2 text-[14px] text-slate-700">
+                      {/* NEW: date line */}
+                      <div className="mt-2 flex items-center gap-2 text-[14px] text-slate-700">
+                        <svg className="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M7 2v3M17 2v3M3 9h18M5 22h14a2 2 0 0 0 2-2V7H3v13a2 2 0 0 0 2 2z" />
+                        </svg>
+                        <span>{dayjs(selectedEvent.date).format("MMM D, YYYY")}</span>
+                      </div>
+
+                      <div className="mt-2 space-y-2 text-[14px] text-slate-700">
                         <div className="flex items-center gap-2">
                           <svg className="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M5 3h14v18H5z" />
@@ -214,8 +221,7 @@ export default function MemberChurch() {
                       </div>
 
                       <p className="mt-3 text-[14px] leading-6 text-slate-700">
-                        {selectedEvent.description ||
-                          "Details coming soon."}
+                        {selectedEvent.description || "Details coming soon."}
                       </p>
                     </div>
                   </div>
@@ -228,7 +234,5 @@ export default function MemberChurch() {
         </div>
       </div>
     </div>
-
-    
   );
 }

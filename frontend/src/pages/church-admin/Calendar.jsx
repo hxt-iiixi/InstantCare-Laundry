@@ -1,4 +1,3 @@
-// src/pages/church-admin/ParishCalendar.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import dayjs from "dayjs";
 import { api } from "../../lib/api";
@@ -107,7 +106,7 @@ export default function ParishCalendar() {
     if (!churchAppId) return;
     const payload = {
       ...newEvent,
-      date: newDate, // "YYYY-MM-DD" (server stores as Date)
+      date: newDate, // "YYYY-MM-DD"
       churchRef: churchAppId,
     };
     try {
@@ -127,14 +126,12 @@ export default function ParishCalendar() {
 
   const handleEditEvent = async () => {
     try {
-      // server implements PUT (not PATCH)
       const { data } = await api.put(
         `/api/events/${editingEvent._id}`,
         newEvent,
         { headers: authHeaders() }
       );
       setEvents((prev) => prev.map((e) => (e._id === data._id ? data : e)));
-      // keep list/date in focus
       const key = dayjs(data.date).format("YYYY-MM-DD");
       setSelectedDateKey(key);
       setSelectedEvent((se) => (se && se._id === data._id ? data : se));
@@ -169,7 +166,7 @@ export default function ParishCalendar() {
       setSelectedEvent(null);
       setShowModal(true);
     } else {
-      setSelectedEvent(null); // show list for this day in the sidebar
+      setSelectedEvent(null);
     }
   };
 
@@ -212,6 +209,7 @@ export default function ParishCalendar() {
                 const inMonth =
                   d.isAfter(startOfMonth.subtract(1, "day")) &&
                   d.isBefore(endOfMonth.add(1, "day"));
+                const isToday = d.isSame(dayjs(), "day");
                 const key = d.format("YYYY-MM-DD");
                 const evts = byDate.get(key) || [];
                 const show = evts.slice(0, 3);
@@ -219,13 +217,21 @@ export default function ParishCalendar() {
                 return (
                   <div
                     key={i}
-                    className={`min-h-[112px] bg-white p-2 text-sm relative ${
-                      inMonth ? "" : "bg-slate-50 text-slate-300"
-                    }`}
+                    className={`min-h-[112px] p-2 text-sm relative cursor-pointer ${
+                      inMonth ? "bg-white" : "bg-slate-50 text-slate-300"
+                    } ${isToday ? "ring-2 ring-orange-400" : ""}`}
                     onClick={() => handleDateClick(d)}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[12px] ${inMonth ? "text-slate-600" : ""}`}>
+                    <div className="flex items-start justify-between">
+                      <span
+                        className={`text-[12px] ${
+                          inMonth ? "text-slate-600" : ""
+                        } ${
+                          isToday
+                            ? "inline-flex items-center justify-center h-6 w-6 rounded-full bg-orange-500 text-white font-semibold"
+                            : ""
+                        }`}
+                      >
                         {d.date()}
                       </span>
                     </div>
@@ -274,18 +280,26 @@ export default function ParishCalendar() {
                         </span>
                       </div>
 
-                      <div className="mt-3 space-y-2 text-[14px] text-slate-700">
+                      {/* NEW: date line */}
+                      <div className="mt-2 flex items-center gap-2 text-[14px] text-slate-700">
+                        <svg className="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M7 2v3M17 2v3M3 9h18M5 22h14a2 2 0 0 0 2-2V7H3v13a2 2 0 0 0 2 2z" />
+                        </svg>
+                        <span>{dayjs(selectedEvent.date).format("MMM D, YYYY")}</span>
+                      </div>
+
+                      <div className="mt-2 space-y-2 text-[14px] text-slate-700">
                         <div className="flex items-center gap-2">
                           <svg className="h-4 w-4 opacity-70" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M5 3h14v18H5z"></path>
                           </svg>
-                          <span className="truncate">{selectedEvent.time}</span>
+                          <span className="truncate">{selectedEvent.time || "Time TBA"}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <svg className="h-4 w-4 opacity-70" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M19 3H5v18h14z"></path>
                           </svg>
-                          <span className="truncate">{selectedEvent.location}</span>
+                          <span className="truncate">{selectedEvent.location || "Location TBA"}</span>
                         </div>
                       </div>
 
