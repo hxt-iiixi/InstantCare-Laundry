@@ -1,5 +1,5 @@
 // src/pages/auth/ChurchAdminRegisterPage.jsx
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { api } from "../../lib/api";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -28,6 +28,14 @@ const ChurchAdminRegisterPage = () => {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Password policy helpers
+  const hasLower = useMemo(() => /[a-z]/.test(password), [password]);
+  const hasUpper = useMemo(() => /[A-Z]/.test(password), [password]);
+  const hasNumber = useMemo(() => /\d/.test(password), [password]);
+  const longEnough = useMemo(() => password.length >= 8, [password]);
+  const isStrong = hasLower && hasUpper && hasNumber && longEnough;
+  const passwordsMatch = password === confirmPassword;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -44,14 +52,17 @@ const ChurchAdminRegisterPage = () => {
       setError("Please enter a password and confirm it.");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (!isStrong) {
+      setError(
+        "Password must be at least 8 characters and include at least one lowercase letter, one uppercase letter, and one number."
+      );
       return;
     }
-    if (password !== confirmPassword) {
+    if (!passwordsMatch) {
       setError("Passwords do not match.");
       return;
     }
+
     try {
       setSubmitting(true);
       const form = new FormData();
@@ -61,25 +72,29 @@ const ChurchAdminRegisterPage = () => {
       form.append("contactNumber", contactNumber);
       form.append("certificate", certificateFile); // field name "certificate" on backend
       form.append("password", password);
-      form.append("confirmPassword", confirmPassword); 
+      form.append("confirmPassword", confirmPassword);
 
-      // 👉 adjust this endpoint to your API (kept obvious on purpose)
       const { data } = await api.post(
         "http://localhost:4000/api/church-admin/register",
         form,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      // Persist auth if your API returns token, then continue to OTP
       if (data?.token) localStorage.setItem("token", data.token);
-
-     navigate("/verify-otp-registration", { state: { email, role: "church-admin" } });
+      navigate("/verify-otp-registration", { state: { email, role: "church-admin" } });
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong!");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const reqItem = (ok, label) => (
+    <li className={`text-xs flex items-center gap-2 ${ok ? "text-emerald-600" : "text-gray-500"}`}>
+      <span className={`inline-block h-1.5 w-1.5 rounded-full ${ok ? "bg-emerald-500" : "bg-gray-300"}`} />
+      {label}
+    </li>
+  );
 
   return (
     <>
@@ -132,9 +147,7 @@ const ChurchAdminRegisterPage = () => {
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                   {/* Church name */}
                   <label className="block">
-                    <span className="block text-xs font-medium text-gray-600 mb-1">
-                      Church name
-                    </span>
+                    <span className="block text-xs font-medium text-gray-600 mb-1">Church name</span>
                     <input
                       type="text"
                       placeholder="Name"
@@ -146,9 +159,7 @@ const ChurchAdminRegisterPage = () => {
 
                   {/* Address / Location */}
                   <label className="block">
-                    <span className="block text-xs font-medium text-gray-600 mb-1">
-                      Address/Location
-                    </span>
+                    <span className="block text-xs font-medium text-gray-600 mb-1">Address/Location</span>
                     <input
                       type="text"
                       placeholder="Address"
@@ -160,9 +171,7 @@ const ChurchAdminRegisterPage = () => {
 
                   {/* Email */}
                   <label className="block">
-                    <span className="block text-xs font-medium text-gray-600 mb-1">
-                      Email address
-                    </span>
+                    <span className="block text-xs font-medium text-gray-600 mb-1">Email address</span>
                     <div className="relative">
                       <img
                         src={iconMail}
@@ -178,6 +187,8 @@ const ChurchAdminRegisterPage = () => {
                       />
                     </div>
                   </label>
+
+                  {/* Password */}
                   <label className="block">
                     <span className="block text-xs font-medium text-gray-600 mb-1">Password</span>
                     <div className="relative">
@@ -186,7 +197,11 @@ const ChurchAdminRegisterPage = () => {
                         placeholder="********"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="new-password"
+                        pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}"
+                        title="At least 8 characters, with at least one lowercase letter, one uppercase letter, and one number."
                         className="w-full rounded-md border border-gray-300 px-3 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C52] focus:border-transparent"
+                        required
                       />
                       <button
                         type="button"
@@ -196,58 +211,69 @@ const ChurchAdminRegisterPage = () => {
                       >
                         {showPass ? (
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                            <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2"/>
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-                            <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                            <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" />
                           </svg>
                         ) : (
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                            <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2"/>
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
                           </svg>
                         )}
                       </button>
                     </div>
+
+                    {/* Live checklist */}
+                    <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1" aria-live="polite">
+                      {reqItem(longEnough, "At least 8 characters")}
+                      {reqItem(hasNumber, "Contains a number")}
+                      {reqItem(hasLower, "Lowercase letter (a-z)")}
+                      {reqItem(hasUpper, "Uppercase letter (A-Z)")}
+                    </ul>
                   </label>
 
-
-                 <label className="block">
-                  <span className="block text-xs font-medium text-gray-600 mb-1">Confirm password</span>
-                  <div className="relative">
-                    <input
-                      type={showConfirm ? "text" : "password"}
-                      placeholder="********"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-3 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C52] focus:border-transparent"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
-                      aria-label={showConfirm ? "Hide password" : "Show password"}
-                    >
-                      {showConfirm ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                          <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2"/>
-                          <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-                          <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2"/>
-                        </svg>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                          <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2"/>
-                          <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </label>
+                  {/* Confirm password */}
+                  <label className="block">
+                    <span className="block text-xs font-medium text-gray-600 mb-1">Confirm password</span>
+                    <div className="relative">
+                      <input
+                        type={showConfirm ? "text" : "password"}
+                        placeholder="********"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        autoComplete="new-password"
+                        className="w-full rounded-md border border-gray-300 px-3 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C52] focus:border-transparent"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm((v) => !v)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
+                        aria-label={showConfirm ? "Hide password" : "Show password"}
+                      >
+                        {showConfirm ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                            <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                            <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                            <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="2" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    {confirmPassword && !passwordsMatch && (
+                      <p className="mt-1 text-xs text-rose-600">Passwords do not match.</p>
+                    )}
+                  </label>
 
                   {/* Contact number */}
                   <label className="block">
-                    <span className="block text-xs font-medium text-gray-600 mb-1">
-                      Contact Number
-                    </span>
+                    <span className="block text-xs font-medium text-gray-600 mb-1">Contact Number</span>
                     <input
                       type="tel"
                       placeholder="Number"
@@ -259,27 +285,21 @@ const ChurchAdminRegisterPage = () => {
 
                   {/* Certificate upload */}
                   <label className="block">
-                    <span className="block text-xs font-medium text-gray-600 mb-1">
-                      Church Certificate
-                    </span>
+                    <span className="block text-xs font-medium text-gray-600 mb-1">Church Certificate</span>
                     <input
                       type="file"
-                      accept=".pdf,.jpg,.jpeg"
+                      accept=".pdf,.jpg,.jpeg,.png"
                       onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
                       className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm bg-white file:mr-3 file:rounded file:border-0 file:bg-[#F28C52] file:px-3 file:py-2 file:text-white hover:file:bg-[#ea7f41] focus:outline-none"
                     />
-                    <p className="mt-1 text-[11px] text-gray-500">
-                      Accepted: PDF/JPG/PNG. Max ~10MB (configurable).
-                    </p>
+                    <p className="mt-1 text-[11px] text-gray-500">Accepted: PDF/JPG/PNG. Max ~10MB.</p>
                   </label>
 
-                  {error && (
-                    <p className="text-red-500 text-center text-sm">{error}</p>
-                  )}
+                  {error && <p className="text-red-500 text-center text-sm">{error}</p>}
 
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || !isStrong || !passwordsMatch}
                     className="w-full rounded-md bg-[#F28C52] py-2.5 text-white text-sm font-medium shadow hover:bg-[#ea7f41] transition disabled:opacity-60"
                   >
                     {submitting ? "Submitting..." : "Submit"}

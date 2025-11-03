@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+// src/pages/auth/ResetPasswordPage.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "../../lib/api";
-import { Eye, EyeOff } from "lucide-react"; // 👁️ Import icons
+import { Eye, EyeOff } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
@@ -17,7 +18,6 @@ export default function ResetPasswordPage() {
   // Accept from nav state or fallback to localStorage
   const stateEmail = location.state?.email;
   const stateOtp = location.state?.otp;
-
   const [email, setEmail] = useState(stateEmail || localStorage.getItem("resetEmail") || "");
   const [otp, setOtp] = useState(stateOtp || localStorage.getItem("resetOtp") || "");
 
@@ -28,14 +28,25 @@ export default function ResetPasswordPage() {
     }
   }, [email, otp, navigate]);
 
+  // Password policy
+  const hasLower = useMemo(() => /[a-z]/.test(newPassword), [newPassword]);
+  const hasUpper = useMemo(() => /[A-Z]/.test(newPassword), [newPassword]);
+  const hasNumber = useMemo(() => /\d/.test(newPassword), [newPassword]);
+  const longEnough = useMemo(() => newPassword.length >= 8, [newPassword]);
+  const isStrong = hasLower && hasUpper && hasNumber && longEnough;
+  const passwordsMatch = newPassword === confirmPassword;
+
   const handleReset = async () => {
-    if (newPassword.length < 8) return toast.error("Password must be at least 8 characters.");
-    if (newPassword !== confirmPassword) return toast.error("Passwords do not match.");
+    if (!isStrong) {
+      return toast.error(
+        "Password must be at least 8 characters and include a lowercase letter, an uppercase letter, and a number."
+      );
+    }
+    if (!passwordsMatch) return toast.error("Passwords do not match.");
 
     setLoading(true);
     try {
       await api.post("/api/reset-password", { email, otp, newPassword });
-      // Clean up temp data
       localStorage.removeItem("resetEmail");
       localStorage.removeItem("resetOtp");
       toast.success("Password reset successfully! You can log in now.");
@@ -47,6 +58,13 @@ export default function ResetPasswordPage() {
     }
   };
 
+  const Req = ({ ok, text }) => (
+    <li className={`text-xs flex items-center gap-2 ${ok ? "text-emerald-600" : "text-gray-500"}`}>
+      <span className={`inline-block h-1.5 w-1.5 rounded-full ${ok ? "bg-emerald-500" : "bg-gray-300"}`} />
+      {text}
+    </li>
+  );
+
   return (
     <div className="max-w-md mx-auto p-8 mt-20 bg-white rounded shadow">
       <h2 className="text-xl font-semibold mb-2">Reset Password</h2>
@@ -54,14 +72,18 @@ export default function ResetPasswordPage() {
         Updating password for <span className="font-medium">{email}</span>.
       </p>
 
-      {/* === New Password === */}
-      <div className="relative mb-3">
+      {/* New Password */}
+      <div className="relative mb-2">
         <input
           type={showNewPass ? "text" : "password"}
-          placeholder="New password (min 8 chars)"
+          placeholder="New password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
+          autoComplete="new-password"
+          pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}"
+          title="At least 8 characters with a lowercase, an uppercase, and a number."
           className="w-full p-3 pr-10 border rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+          required
         />
         <button
           type="button"
@@ -73,14 +95,24 @@ export default function ResetPasswordPage() {
         </button>
       </div>
 
-      {/* === Confirm Password === */}
-      <div className="relative mb-4">
+      {/* Live checklist */}
+      <ul className="grid grid-cols-2 gap-x-4 gap-y-1 mb-3" aria-live="polite">
+        <Req ok={longEnough} text="At least 8 characters" />
+        <Req ok={hasNumber} text="Has a number" />
+        <Req ok={hasLower} text="Lowercase letter" />
+        <Req ok={hasUpper} text="Uppercase letter" />
+      </ul>
+
+      {/* Confirm Password */}
+      <div className="relative mb-2">
         <input
           type={showConfirmPass ? "text" : "password"}
           placeholder="Confirm new password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
+          autoComplete="new-password"
           className="w-full p-3 pr-10 border rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+          required
         />
         <button
           type="button"
@@ -91,10 +123,13 @@ export default function ResetPasswordPage() {
           {showConfirmPass ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
         </button>
       </div>
+      {confirmPassword && !passwordsMatch && (
+        <p className="text-xs text-rose-600 mb-3">Passwords do not match.</p>
+      )}
 
       <button
         onClick={handleReset}
-        disabled={loading}
+        disabled={loading || !isStrong || !passwordsMatch}
         className="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600 transition disabled:opacity-60"
       >
         {loading ? "Updating..." : "Reset Password"}
