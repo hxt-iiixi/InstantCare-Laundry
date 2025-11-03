@@ -1,6 +1,6 @@
 // src/pages/member-pages/Contact.jsx
-import React, { useEffect, useState } from "react";
-import { Phone, MapPin } from "lucide-react";
+import React, { useEffect, useState, useRef } from "react";
+import { Phone, MapPin, X } from "lucide-react";
 import Navbar from "../../components/member-pages/Navbar";
 import { api } from "../../lib/api";
 import imgkids from "../../assets/icons/jesus with kids.png";
@@ -12,6 +12,10 @@ export default function Contact() {
   const [message, setMessage] = useState("");
   const [loadingEmail, setLoadingEmail] = useState(true);
   const [sending, setSending] = useState(false);
+
+  // NEW: modal state
+  const [showSuccess, setShowSuccess] = useState(false);
+  const closeBtnRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -51,6 +55,16 @@ export default function Contact() {
     return () => (mounted = false);
   }, []);
 
+  // Focus first actionable element when modal opens
+  useEffect(() => {
+    if (showSuccess) {
+      const t = setTimeout(() => {
+        closeBtnRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, [showSuccess]);
+
   const handleCopy = async () => {
     if (!churchEmail) return;
     try {
@@ -65,8 +79,8 @@ export default function Contact() {
       setSending(true);
       // backend sends the email via SMTP
       await api.post("/api/members/contact", { subject, message });
-      alert("Message sent! The church admin will receive your email shortly.");
       setMessage("");
+      setShowSuccess(true); // OPEN MODAL
     } catch (err) {
       console.error(err);
       alert(
@@ -78,8 +92,13 @@ export default function Contact() {
     }
   };
 
+  const handleCloseModal = () => setShowSuccess(false);
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") setShowSuccess(false);
+  };
+
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-800">
+    <div className="min-h-screen bg-white font-sans text-gray-800" onKeyDown={handleKeyDown}>
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-1 py-10">
@@ -160,7 +179,7 @@ export default function Contact() {
               Reach out to our {churchName.toLowerCase()} team for guidance, support, or collaboration.
             </p>
             <ul className="space-y-2 text-gray-700">
-              <li>📩 Send us a message</li>
+              <li>📩 Send us a message to your admin</li>
               <li>📧 Email our support team</li>
               <li>💬 Start a faith-driven chat</li>
             </ul>
@@ -173,7 +192,7 @@ export default function Contact() {
             <p className="text-gray-600 mb-2">
               We’re here to help with your church management needs. Call us from
               <br />
-              <strong>Mon–Fri, 8AM–5PM</strong>
+              <strong></strong>
             </p>
             <p className="font-semibold text-gray-900">+63 (900) 000-0000</p>
           </div>
@@ -191,6 +210,55 @@ export default function Contact() {
           </div>
         </div>
       </section>
+
+      {/* SUCCESS MODAL */}
+      {showSuccess && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          aria-labelledby="success-title"
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={handleCloseModal}
+          />
+          {/* Modal Panel */}
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between">
+              <h2 id="success-title" className="text-xl font-bold text-gray-900">
+                Message Sent!
+              </h2>
+              <button
+                ref={closeBtnRef}
+                onClick={handleCloseModal}
+                className="ml-3 inline-flex items-center justify-center rounded-full p-2 text-gray-500 hover:bg-gray-100"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-3 text-gray-600">
+              Your message has been sent successfully. The church admin will receive your email shortly.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleCloseModal}
+                className="flex-1 rounded-lg bg-orange-600 px-4 py-2 font-semibold text-white hover:bg-orange-700"
+              >
+                Okay
+              </button>
+              <button
+                onClick={handleCloseModal}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Send Another
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
